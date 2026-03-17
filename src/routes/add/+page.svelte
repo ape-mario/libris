@@ -1,8 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { addBook } from '$lib/services/books';
   import { resizeImage } from '$lib/services/covers';
   import { searchOpenLibrary, lookupByISBN, type OpenLibraryResult } from '$lib/services/openlibrary';
+  import { getAllSeries, createSeries } from '$lib/services/series';
+  import type { Series } from '$lib/db';
   import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 
   let mode = $state<'search' | 'manual' | 'scan'>('search');
@@ -19,6 +22,16 @@
   let coverPreview = $state<string | null>(null);
   let saving = $state(false);
   let error = $state('');
+
+  // Series fields
+  let seriesList = $state<Series[]>([]);
+  let selectedSeriesId = $state<string>('');
+  let seriesOrder = $state<string>('');
+  let newSeriesName = $state('');
+
+  onMount(async () => {
+    seriesList = await getAllSeries();
+  });
 
   async function handleBarcode(code: string) {
     isbn = code;
@@ -73,7 +86,9 @@
       isbn: isbn.trim() || undefined,
       coverUrl: !coverFile && coverPreview ? coverPreview : undefined,
       coverBlob,
-      categories: categories.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)
+      categories: categories.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean),
+      seriesId: selectedSeriesId || undefined,
+      seriesOrder: seriesOrder ? parseInt(seriesOrder) : undefined
     });
 
     if (result === null) {
@@ -179,6 +194,38 @@
         <input type="text" bind:value={categories} placeholder="e.g. sci-fi, novel"
           class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white" />
       </label>
+
+      <label class="flex flex-col gap-1">
+        <span class="text-sm text-slate-400">Series</span>
+        <select bind:value={selectedSeriesId}
+          class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white">
+          <option value="">None</option>
+          {#each seriesList as s}
+            <option value={s.id}>{s.name}</option>
+          {/each}
+        </select>
+      </label>
+
+      {#if selectedSeriesId}
+        <label class="flex flex-col gap-1">
+          <span class="text-sm text-slate-400">Position in series</span>
+          <input type="number" bind:value={seriesOrder} min="1" placeholder="e.g. 1"
+            class="px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white" />
+        </label>
+      {/if}
+
+      <div class="flex gap-2">
+        <input type="text" bind:value={newSeriesName} placeholder="Or create new series..."
+          class="flex-1 px-4 py-2 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm" />
+        <button type="button" class="px-3 py-2 bg-slate-700 rounded-lg text-sm"
+          onclick={async () => {
+            if (!newSeriesName.trim()) return;
+            const s = await createSeries(newSeriesName.trim());
+            seriesList = await getAllSeries();
+            selectedSeriesId = s.id;
+            newSeriesName = '';
+          }}>Add</button>
+      </div>
 
       {#if error}
         <p class="text-red-400 text-sm">{error}</p>
