@@ -4,6 +4,10 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+	test: {
+		include: ['src/**/*.test.ts'],
+		environment: 'node'
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit(),
