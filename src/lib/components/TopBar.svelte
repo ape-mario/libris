@@ -15,7 +15,10 @@
     <span>{user?.name || 'Select Profile'}</span>
   </button>
 
-  <a href="/add" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-500">
-    + Add
-  </a>
+  <div class="flex items-center gap-3">
+    <a href="/settings" class="text-slate-400 hover:text-white text-lg">&#9881;</a>
+    <a href="/add" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-500">
+      + Add
+    </a>
+  </div>
 </header>
