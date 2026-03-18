@@ -9,7 +9,7 @@ export interface SyncProvider {
 	onStatusChange(cb: (status: SyncStatus) => void): () => void;
 }
 
-export type ProviderType = 'webrtc' | 'partykit' | 'hocuspocus';
+export type ProviderType = 'partykit' | 'hocuspocus';
 
 export interface SyncConfig {
 	provider: ProviderType;
@@ -18,11 +18,14 @@ export interface SyncConfig {
 
 export function getSyncConfig(): SyncConfig {
 	const raw = localStorage.getItem('libris_sync_config');
-	if (!raw) return { provider: 'webrtc' };
+	if (!raw) return { provider: 'partykit' };
 	try {
-		return JSON.parse(raw);
+		const config = JSON.parse(raw);
+		// Migrate old webrtc config to partykit
+		if (config.provider === 'webrtc') config.provider = 'partykit';
+		return config;
 	} catch {
-		return { provider: 'webrtc' };
+		return { provider: 'partykit' };
 	}
 }
 

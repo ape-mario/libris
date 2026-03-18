@@ -5,8 +5,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { getLocale, setLocale } from '$lib/i18n/index.svelte';
-  import { getSyncStatus, getRoomCode, onSyncStatusChange } from '$lib/sync/manager';
-  import type { SyncStatus } from '$lib/sync/provider';
+  import { getRoomCode } from '$lib/sync/manager';
 
   interface UserWithStats extends User {
     bookCount: number;
@@ -18,9 +17,7 @@
   let showCreate = $state(false);
   let locale = $derived(getLocale());
   let syncing = $state(false);
-  let syncStatusText = $state('');
   let unsubscribe: (() => void) | null = null;
-  let unsubSync: (() => void) | null = null;
 
   const avatarColors = [
     'bg-accent/10 text-accent',
@@ -30,37 +27,19 @@
     'bg-warm-200 text-warm-700',
   ];
 
-  function updateSyncStatus(status: SyncStatus) {
-    const roomCode = getRoomCode();
-    if (!roomCode) {
-      syncStatusText = '';
-      syncing = false;
-      return;
-    }
-    syncing = true;
-    const labels: Record<SyncStatus, string> = {
-      disconnected: `Room: ${roomCode} | Disconnected`,
-      connecting: `Room: ${roomCode} | Connecting...`,
-      connected: `Room: ${roomCode} | Connected — waiting for data`,
-      offline: `Room: ${roomCode} | Offline`
-    };
-    syncStatusText = labels[status] || status;
-  }
-
   onMount(() => {
     loadUsers();
-    // Observe Y.Doc 'users' map for sync updates (new users arriving from peers)
     unsubscribe = q.observe('users', () => {
       loadUsers();
     });
-    // Show sync status if in a room
-    updateSyncStatus(getSyncStatus());
-    unsubSync = onSyncStatusChange(updateSyncStatus);
+    // Show syncing indicator if in a room with no users yet
+    if (users.length === 0 && getRoomCode()) {
+      syncing = true;
+    }
   });
 
   onDestroy(() => {
     unsubscribe?.();
-    unsubSync?.();
   });
 
   function loadUsers() {
@@ -104,14 +83,9 @@
     <p class="text-ink-muted text-sm mb-8">{t('profile.subtitle')}</p>
 
     {#if syncing}
-      <div class="flex flex-col items-center gap-1.5 mb-8 animate-fade-in">
-        <div class="flex items-center gap-2">
-          <div class="w-6 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
-          <span class="text-xs text-ink-muted">{t('profile.syncing')}</span>
-        </div>
-        {#if syncStatusText}
-          <span class="text-[10px] text-warm-400 font-mono">{syncStatusText}</span>
-        {/if}
+      <div class="flex items-center gap-2 mb-8 animate-fade-in">
+        <div class="w-6 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
+        <span class="text-xs text-ink-muted">{t('profile.syncing')}</span>
       </div>
     {/if}
 

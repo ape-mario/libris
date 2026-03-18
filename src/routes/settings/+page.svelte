@@ -31,7 +31,7 @@
   let syncStatus = $state<SyncStatus>('disconnected');
   let roomCode = $state<string | null>(null);
   let joinInput = $state('');
-  let selectedProvider = $state<ProviderType>('webrtc');
+  let selectedProvider = $state<ProviderType>('partykit');
   let serverUrl = $state('');
   let showJoinInput = $state(false);
   let unsubSync: (() => void) | null = null;
@@ -247,7 +247,6 @@
         <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('settings.sync_provider')}</span>
         <div class="flex gap-1.5 mt-2">
           {#each [
-            { key: 'webrtc' as ProviderType, label: t('settings.sync_provider_webrtc') },
             { key: 'partykit' as ProviderType, label: t('settings.sync_provider_partykit') },
             { key: 'hocuspocus' as ProviderType, label: t('settings.sync_provider_hocuspocus') }
           ] as opt}
@@ -257,9 +256,6 @@
             >{opt.label}</button>
           {/each}
         </div>
-        {#if selectedProvider === 'webrtc'}
-          <p class="text-[11px] text-warm-400 mt-2">{t('settings.sync_webrtc_hint')}</p>
-        {/if}
         {#if selectedProvider === 'hocuspocus'}
           <div class="mt-2 flex gap-2">
             <input

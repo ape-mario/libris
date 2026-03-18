@@ -1,8 +1,7 @@
 import type { SyncProvider, SyncStatus } from './provider';
-import { getSyncConfig, saveSyncConfig, type SyncConfig } from './provider';
+import { getSyncConfig, type SyncConfig } from './provider';
 import { createPartyKitProvider } from './partykit';
 import { createHocuspocusProvider } from './hocuspocus';
-import { createTrysteroProvider } from './trystero';
 import { generateRoomCode } from './room';
 import { doc } from '$lib/db';
 
@@ -21,10 +20,7 @@ function createProvider(config: SyncConfig): SyncProvider {
 	if (config.provider === 'hocuspocus' && config.serverUrl) {
 		return createHocuspocusProvider(config.serverUrl);
 	}
-	if (config.provider === 'partykit') {
-		return createPartyKitProvider();
-	}
-	return createTrysteroProvider();
+	return createPartyKitProvider();
 }
 
 export function getSyncStatus(): SyncStatus {
