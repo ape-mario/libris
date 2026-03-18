@@ -174,4 +174,4 @@ Di Settings, pilih **Self-hosted** → masukkan `wss://your-vps:1234` → Create
 
 ## Lisensi
 
-Private
+[MIT](LICENSE)
