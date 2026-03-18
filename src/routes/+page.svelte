@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto, afterNavigate } from '$app/navigation';
+  import { base } from '$app/paths';
   import { getBooks, searchBooks, getBooksByCategory } from '$lib/services/books';
   import type { Book } from '$lib/db';
   import BookCard from '$lib/components/BookCard.svelte';
@@ -166,7 +167,7 @@
       </div>
       <p class="font-display text-lg text-ink-light mb-1">{t('library.empty.title')}</p>
       <p class="text-sm text-ink-muted mb-6">{t('library.empty.subtitle')}</p>
-      <a href="/add" class="btn-primary inline-block">{t('library.empty.cta')}</a>
+      <a href="{base}/add" class="btn-primary inline-block">{t('library.empty.cta')}</a>
     </div>
   {:else if books.length === 0}
     <p class="text-center text-ink-muted py-12">{t('library.no_results')} "{query || filterCategory}"</p>
@@ -174,7 +175,7 @@
     <div class="flex flex-wrap gap-x-4 gap-y-6">
       {#each visibleBooks as book, i}
         <div style="animation-delay: {Math.min(i * 40, 400)}ms" class="animate-fade-up">
-          <BookCard {book} onclick={() => goto(`/book/${book.id}`)} />
+          <BookCard {book} onclick={() => goto(`${base}/book/${book.id}`)} />
         </div>
       {/each}
     </div>

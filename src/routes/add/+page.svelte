@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { addBook, hasBookWithISBN } from '$lib/services/books';
   import { showConfirm } from '$lib/stores/dialog.svelte';
@@ -121,7 +122,7 @@
         await setCoverBase64(result.id, base64);
       }
 
-      goto('/');
+      goto(`${base}/`);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'QuotaExceededError') {
         showToast('Storage full. Try exporting and clearing old data.', 'error');

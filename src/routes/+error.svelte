@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { base } from '$app/paths';
   import { t } from '$lib/i18n/index.svelte';
 </script>
 
@@ -13,5 +14,5 @@
     {page.status === 404 ? t('error.not_found') : t('error.generic')}
   </h1>
   <p class="text-sm text-ink-muted mb-6">{page.error?.message || t('error.unexpected')}</p>
-  <a href="/" class="btn-primary inline-block">{t('error.back')}</a>
+  <a href="{base}/" class="btn-primary inline-block">{t('error.back')}</a>
 </div>

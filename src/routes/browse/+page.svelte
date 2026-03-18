@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { base } from '$app/paths';
   import { getBooks } from '$lib/services/books';
   import { getAllSeries } from '$lib/services/series';
   import { getBooksBySeries } from '$lib/services/books';
@@ -60,7 +61,7 @@
   <div class="flex flex-col gap-2">
     {#if tab === 'categories'}
       {#each categories as cat, i}
-        <a href="/browse/category/{encodeURIComponent(cat.name)}"
+        <a href="{base}/browse/category/{encodeURIComponent(cat.name)}"
           class="card flex items-center justify-between p-4 hover:shadow-md transition-shadow animate-fade-up"
           style="animation-delay: {i * 40}ms">
           <span class="capitalize font-medium text-sm text-ink">{cat.name}</span>
@@ -73,7 +74,7 @@
 
     {#if tab === 'series'}
       {#each seriesList as s, i}
-        <a href="/browse/series/{s.id}"
+        <a href="{base}/browse/series/{s.id}"
           class="card flex items-center justify-between p-4 hover:shadow-md transition-shadow animate-fade-up"
           style="animation-delay: {i * 40}ms">
           <span class="font-medium text-sm text-ink">{s.name}</span>
@@ -86,7 +87,7 @@
 
     {#if tab === 'authors'}
       {#each authors as author, i}
-        <a href="/browse/author/{encodeURIComponent(author.name)}"
+        <a href="{base}/browse/author/{encodeURIComponent(author.name)}"
           class="card flex items-center justify-between p-4 hover:shadow-md transition-shadow animate-fade-up"
           style="animation-delay: {i * 40}ms">
           <span class="font-medium text-sm text-ink">{author.name}</span>

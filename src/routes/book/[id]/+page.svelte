@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getBookById, updateBook, deleteBook } from '$lib/services/books';
   import { getUserBookData, setUserBookData } from '$lib/services/userbooks';
@@ -162,7 +163,7 @@
     if (!confirmed) return;
     deleteBook(book.id);
     showToast(t('toast.deleted'), 'info');
-    goto('/');
+    goto(`${base}/`);
   }
 
   let progressPercent = $derived(
@@ -435,7 +436,7 @@
             {/each}
           </div>
         {:else}
-          <a href="/shelves" class="text-xs text-accent hover:text-accent-dark transition-colors font-medium">
+          <a href="{base}/shelves" class="text-xs text-accent hover:text-accent-dark transition-colors font-medium">
             + {t('shelves.create')}
           </a>
         {/if}

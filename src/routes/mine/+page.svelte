@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { getCurrentUser } from '$lib/stores/user.svelte';
   import { getUserBooks, getLentBooks } from '$lib/services/userbooks';
   import { getBookById } from '$lib/services/books';
@@ -80,7 +81,7 @@
           <button
             class="card flex items-center gap-4 p-4 text-left hover:shadow-md transition-shadow w-full animate-fade-up"
             style="animation-delay: {i * 40}ms"
-            onclick={() => goto(`/book/${item.bookId}`)}
+            onclick={() => goto(`${base}/book/${item.bookId}`)}
           >
             <div class="w-10 h-14 rounded overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
               {#if item.book.coverUrl}
@@ -98,7 +99,7 @@
       <div class="flex flex-wrap gap-x-4 gap-y-6">
         {#each books as item, i}
           <div style="animation-delay: {i * 40}ms" class="animate-fade-up">
-            <BookCard book={item.book} onclick={() => goto(`/book/${item.bookId}`)} />
+            <BookCard book={item.book} onclick={() => goto(`${base}/book/${item.bookId}`)} />
           </div>
         {/each}
       </div>

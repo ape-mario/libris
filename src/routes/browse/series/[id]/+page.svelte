@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getBooksBySeries } from '$lib/services/books';
   import { q } from '$lib/db';
@@ -29,7 +30,7 @@
   <div class="flex flex-wrap gap-x-4 gap-y-6">
     {#each books as book, i}
       <div style="animation-delay: {i * 40}ms" class="animate-fade-up">
-        <BookCard {book} onclick={() => goto(`/book/${book.id}`)} />
+        <BookCard {book} onclick={() => goto(`${base}/book/${book.id}`)} />
       </div>
     {/each}
   </div>

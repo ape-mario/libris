@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { base } from '$app/paths';
   import { getCurrentUser } from '$lib/stores/user.svelte';
   import { getUserShelves, createShelf, deleteShelf } from '$lib/services/shelves';
   import { getBookById } from '$lib/services/books';
@@ -108,7 +109,7 @@
             <div class="flex gap-3 overflow-x-auto pb-2">
               {#each shelf.books as book}
                 <div class="flex-shrink-0">
-                  <BookCard {book} onclick={() => goto(`/book/${book.id}`)} />
+                  <BookCard {book} onclick={() => goto(`${base}/book/${book.id}`)} />
                 </div>
               {/each}
             </div>
