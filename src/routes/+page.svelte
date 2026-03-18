@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { goto, afterNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { getBooks, searchBooks, getBooksByCategory } from '$lib/services/books';
+  import { q } from '$lib/db';
   import type { Book } from '$lib/db';
   import BookCard from '$lib/components/BookCard.svelte';
   import { t, bookCount } from '$lib/i18n/index.svelte';
@@ -20,9 +21,18 @@
   let categories = $state<string[]>([]);
   let showFilters = $state(false);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let unsubBooks: (() => void) | null = null;
 
   onMount(() => {
     loadLibrary();
+    // Observe Y.Doc for remote sync updates (books added/removed from other devices)
+    unsubBooks = q.observe('books', () => {
+      loadLibrary();
+    });
+  });
+
+  onDestroy(() => {
+    unsubBooks?.();
   });
 
   // afterNavigate fires on every client-side navigation back to this page
