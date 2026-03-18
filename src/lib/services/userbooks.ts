@@ -18,9 +18,17 @@ export function setUserBookData(
 	const key = `${userId}:${bookId}`;
 	const existing = q.getItem<UserBookData>('userBookData', key);
 
+	// Auto-manage dateRead when status changes
+	const effectiveUpdates: Record<string, unknown> = { ...updates };
+	if (updates.status === 'read' && existing?.status !== 'read') {
+		effectiveUpdates.dateRead = new Date().toISOString();
+	} else if (updates.status && updates.status !== 'read' && existing?.status === 'read') {
+		effectiveUpdates.dateRead = undefined; // clears the field
+	}
+
 	if (existing) {
-		q.updateItem('userBookData', key, updates);
-		return { ...existing, ...updates };
+		q.updateItem('userBookData', key, effectiveUpdates);
+		return { ...existing, ...effectiveUpdates } as UserBookData;
 	}
 
 	const data: UserBookData = {
@@ -28,8 +36,8 @@ export function setUserBookData(
 		bookId,
 		status: 'unread',
 		isWishlist: false,
-		...updates
-	};
+		...effectiveUpdates
+	} as UserBookData;
 	q.setItem('userBookData', key, data);
 	return data;
 }

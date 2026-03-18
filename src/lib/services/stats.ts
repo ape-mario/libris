@@ -43,13 +43,17 @@ export function getReadingStats(userId: string): ReadingStats {
 		const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
 		const label = d.toLocaleDateString('en', { month: 'short', year: '2-digit' });
 
-		const count = userBooks.filter((book) => {
-			const added = new Date(book.dateAdded);
-			const sameMonth =
-				added.getFullYear() === d.getFullYear() && added.getMonth() === d.getMonth();
-			if (!sameMonth) return false;
-			const ud = userData.find((u) => u.bookId === book.id);
-			return ud?.status === 'read';
+		// Count books marked as read in this month (by dateRead, fallback to dateAdded)
+		const count = userData.filter((ud) => {
+			if (ud.status !== 'read') return false;
+			const readDate = ud.dateRead
+				? new Date(ud.dateRead)
+				: (() => {
+					const book = userBooks.find((b) => b.id === ud.bookId);
+					return book ? new Date(book.dateAdded) : null;
+				})();
+			if (!readDate) return false;
+			return readDate.getFullYear() === d.getFullYear() && readDate.getMonth() === d.getMonth();
 		}).length;
 
 		booksPerMonth.push({ month: label, count });

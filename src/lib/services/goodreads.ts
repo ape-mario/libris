@@ -185,12 +185,18 @@ export function importGoodreadsCSV(csvText: string, userId: string): number {
 		if (!existingData) {
 			const status = shelvesToStatus(parsed.shelves);
 			const isWishlist = parsed.shelves.includes('to-read');
+			const dateRead = status === 'read' && parsed.dateRead
+				? new Date(parsed.dateRead).toISOString()
+				: status === 'read'
+					? new Date().toISOString()
+					: undefined;
 			q.setItem('userBookData', key, {
 				userId,
 				bookId,
 				status,
 				rating: parsed.rating,
 				isWishlist,
+				dateRead,
 				totalPages: parsed.numPages
 			});
 		}

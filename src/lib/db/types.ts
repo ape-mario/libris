@@ -25,6 +25,7 @@ export interface UserBookData {
   notes?: string;
   lentTo?: string;
   lentDate?: string;
+  dateRead?: string;
   isWishlist: boolean;
   currentPage?: number;
   totalPages?: number;

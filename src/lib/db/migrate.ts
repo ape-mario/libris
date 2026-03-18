@@ -128,6 +128,14 @@ export async function migrateFromDexie(
 				ymap.set('isWishlist', ubd.isWishlist || false);
 				if (ubd.currentPage) ymap.set('currentPage', ubd.currentPage);
 				if (ubd.totalPages) ymap.set('totalPages', ubd.totalPages);
+				// Backfill dateRead for read books using book's dateAdded as best guess
+				if ((ubd.status || 'unread') === 'read') {
+					const book = books.find((b: any) => b.id === ubd.bookId);
+					if (book) {
+						const dateAdded = book.dateAdded instanceof Date ? book.dateAdded.toISOString() : book.dateAdded;
+						ymap.set('dateRead', dateAdded);
+					}
+				}
 				ubdMap.set(key, ymap);
 			}
 			stats.userBookData = userBookData.length;

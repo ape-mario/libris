@@ -1,4 +1,4 @@
-import { q, type ReadingGoal } from '$lib/db';
+import { q, type ReadingGoal, type UserBookData } from '$lib/db';
 
 export function getGoal(userId: string, year: number = new Date().getFullYear()): ReadingGoal | null {
 	return q.getItem<ReadingGoal>('goals', `${userId}:${year}`) ?? null;
@@ -14,15 +14,15 @@ export function removeGoal(userId: string, year: number = new Date().getFullYear
 
 export function getBooksReadThisYear(userId: string): number {
 	const year = new Date().getFullYear();
-	const allBooks = q.getAll<{ id: string; dateAdded: string }>('books');
-	const userData = q.filter<{ userId: string; bookId: string; status: string }>('userBookData', (d) => d.userId === userId);
+	const userData = q.filter<UserBookData>('userBookData', (d) => d.userId === userId && d.status === 'read');
 
-	const readBookIds = new Set(
-		userData.filter((d) => d.status === 'read').map((d) => d.bookId)
-	);
-
-	return allBooks.filter((b) => {
-		if (!readBookIds.has(b.id)) return false;
-		return new Date(b.dateAdded).getFullYear() === year;
+	return userData.filter((d) => {
+		// Use dateRead if available, fall back to looking up book.dateAdded for legacy data
+		if (d.dateRead) {
+			return new Date(d.dateRead).getFullYear() === year;
+		}
+		// Fallback for records without dateRead (pre-migration)
+		const book = q.getItem<{ dateAdded: string }>('books', d.bookId);
+		return book ? new Date(book.dateAdded).getFullYear() === year : false;
 	}).length;
 }
