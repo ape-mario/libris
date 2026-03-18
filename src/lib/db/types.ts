@@ -10,23 +10,21 @@ export interface Book {
   authors: string[];
   isbn?: string;
   coverUrl?: string;
-  coverBlob?: Blob;
   categories: string[];
   seriesId?: string;
   seriesOrder?: number;
-  dateAdded: Date;
-  dateModified: Date;
+  dateAdded: string;
+  dateModified: string;
 }
 
 export interface UserBookData {
-  id: string;
   userId: string;
   bookId: string;
   status: 'unread' | 'reading' | 'read' | 'dnf';
   rating?: number;
   notes?: string;
   lentTo?: string;
-  lentDate?: Date;
+  lentDate?: string;
   isWishlist: boolean;
   currentPage?: number;
   totalPages?: number;
@@ -38,23 +36,14 @@ export interface Series {
   description?: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  color?: string;
-}
-
 export interface Shelf {
   id: string;
   userId: string;
   name: string;
   bookIds: string[];
-  dateCreated: Date;
+  dateCreated: string;
 }
 
-export interface SyncConfig {
-  id: string;
-  serverUrl: string;
-  lastSyncedAt?: Date;
-  autoSync: boolean;
+export interface ReadingGoal {
+  target: number;
 }
