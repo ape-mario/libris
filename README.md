@@ -11,7 +11,7 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - **Shelves** — Create custom shelves to organize books your way
 - **Series tracking** — Group books by series with reading order
 - **Browse** — Explore your catalog by category, series, or author
-- **Reading stats** — Per-user statistics: books read, pages, ratings, genre breakdown, monthly progress, and top authors
+- **Reading stats** — Per-user statistics with yearly filter: books read, pages, ratings, genre breakdown, monthly progress, and top authors
 - **Reading goals** — Set and track yearly reading targets
 - **Recommendations** — Get book suggestions based on your reading history (via Open Library)
 - **Lending tracker** — Keep track of who you've lent books to
@@ -45,7 +45,7 @@ npm run dev
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
+| `npm run dev` | Start development server (exposed to local network) |
 | `npm run build` | Production build to `build/` |
 | `npm run preview` | Preview production build |
 | `npm run check` | Type-check with svelte-check |
