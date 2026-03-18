@@ -7,7 +7,7 @@ type TranslationKey = keyof typeof en;
 const translations: Record<Locale, Record<string, string>> = { en, id };
 
 let currentLocale = $state<Locale>(
-  (typeof localStorage !== 'undefined' && localStorage.getItem('locale') as Locale) || 'en'
+  (typeof localStorage !== 'undefined' && localStorage.getItem('locale') as Locale) || 'id'
 );
 
 export function getLocale(): Locale {
