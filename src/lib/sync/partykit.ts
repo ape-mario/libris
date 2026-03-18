@@ -7,8 +7,8 @@ const PARTYKIT_HOST =
 
 export function createPartyKitProvider(): SyncProvider {
 	return createProvider(async (doc, roomCode, setStatus) => {
-		const { WebsocketProvider } = await import('y-partykit/provider');
-		const provider = new WebsocketProvider(PARTYKIT_HOST, roomCode, doc, { connect: true });
+		const YPartyKitProvider = (await import('y-partykit/provider')).default;
+		const provider = new YPartyKitProvider(PARTYKIT_HOST, roomCode, doc, { connect: true });
 
 		provider.on('sync', (synced: boolean) => {
 			if (synced) setStatus('connected');
