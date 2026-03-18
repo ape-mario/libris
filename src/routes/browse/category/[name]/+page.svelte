@@ -10,8 +10,8 @@
   let books = $state<Book[]>([]);
   let name = $derived(decodeURIComponent(page.params.name!));
 
-  onMount(async () => {
-    books = await getBooksByCategory(name);
+  onMount(() => {
+    books = getBooksByCategory(name);
   });
 </script>
 

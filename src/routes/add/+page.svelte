@@ -6,6 +6,7 @@
   import { resizeImage } from '$lib/services/covers';
   import { searchOpenLibrary, lookupByISBN, type OpenLibraryResult } from '$lib/services/openlibrary';
   import { getAllSeries, createSeries } from '$lib/services/series';
+  import { setCoverBase64 } from '$lib/services/coverCache';
   import type { Series } from '$lib/db';
   import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
   import { t } from '$lib/i18n/index.svelte';
@@ -30,8 +31,8 @@
   let seriesOrder = $state<string>('');
   let newSeriesName = $state('');
 
-  onMount(async () => {
-    seriesList = await getAllSeries();
+  onMount(() => {
+    seriesList = getAllSeries();
   });
 
   async function handleBarcode(code: string) {
@@ -52,7 +53,7 @@
     searching = false;
   }
 
-  async function selectResult(result: OpenLibraryResult) {
+  function selectResult(result: OpenLibraryResult) {
     title = result.title;
     authors = result.authors.join(', ');
     isbn = result.isbn || '';
@@ -60,7 +61,7 @@
     mode = 'manual';
   }
 
-  async function handleCoverUpload(e: Event) {
+  function handleCoverUpload(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -79,7 +80,7 @@
     try {
       let allowDuplicate = false;
       const trimmedIsbn = isbn.trim();
-      if (trimmedIsbn && await hasBookWithISBN(trimmedIsbn)) {
+      if (trimmedIsbn && hasBookWithISBN(trimmedIsbn)) {
         const confirmed = await showConfirm({
           title: t('add.duplicate_title'),
           message: t('add.duplicate_message'),
@@ -92,17 +93,11 @@
         allowDuplicate = true;
       }
 
-      let coverBlob: Blob | undefined;
-      if (coverFile) {
-        coverBlob = await resizeImage(coverFile);
-      }
-
-      const result = await addBook({
+      const result = addBook({
         title: title.trim(),
         authors: authors.split(',').map((a) => a.trim()).filter(Boolean),
         isbn: trimmedIsbn || undefined,
         coverUrl: !coverFile && coverPreview ? coverPreview : undefined,
-        coverBlob,
         categories: categories.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean),
         seriesId: selectedSeriesId || undefined,
         seriesOrder: seriesOrder ? parseInt(seriesOrder) : undefined
@@ -112,6 +107,18 @@
         error = t('add.error_duplicate');
         saving = false;
         return;
+      }
+
+      // Store custom cover in coverCache if uploaded
+      if (coverFile && result) {
+        const blob = await resizeImage(coverFile);
+        const reader = new FileReader();
+        const base64 = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        await setCoverBase64(result.id, base64);
       }
 
       goto('/');
@@ -128,7 +135,6 @@
 </script>
 
 <div class="max-w-lg mx-auto animate-fade-up">
-  <!-- Back -->
   <button onclick={() => history.back()} class="flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink mb-4 transition-colors">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     {t('common.back')}
@@ -136,7 +142,6 @@
 
   <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('add.title')}</h1>
 
-  <!-- Mode tabs -->
   <div class="flex gap-2 mb-6">
     {#each [
       { key: 'search', label: t('add.search') },
@@ -150,7 +155,6 @@
     {/each}
   </div>
 
-  <!-- Search mode -->
   {#if mode === 'search'}
     <form class="flex gap-2 mb-5" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
       <div class="relative flex-1">
@@ -191,14 +195,12 @@
     </div>
   {/if}
 
-  <!-- Scan mode -->
   {#if mode === 'scan'}
     <div class="rounded-xl overflow-hidden">
       <BarcodeScanner onDetected={handleBarcode} />
     </div>
   {/if}
 
-  <!-- Manual mode -->
   {#if mode === 'manual'}
     <form class="flex flex-col gap-4" onsubmit={(e) => { e.preventDefault(); handleSave(); }}>
       {#if coverPreview}
@@ -255,10 +257,10 @@
           <input type="text" bind:value={newSeriesName} placeholder={t('add.series_create')}
             class="input-field flex-1" />
           <button type="button" class="btn-secondary"
-            onclick={async () => {
+            onclick={() => {
               if (!newSeriesName.trim()) return;
-              const s = await createSeries(newSeriesName.trim());
-              seriesList = await getAllSeries();
+              const s = createSeries(newSeriesName.trim());
+              seriesList = getAllSeries();
               selectedSeriesId = s.id;
               newSeriesName = '';
             }}>{t('add.series_add')}</button>

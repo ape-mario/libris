@@ -1,17 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Book } from '$lib/db';
+  import { getCoverBase64 } from '$lib/services/coverCache';
 
   let { book, onclick }: { book: Book; onclick?: () => void } = $props();
 
-  let coverSrc = $state<string | null>(null);
+  let coverSrc = $state<string | null>(book.coverUrl || null);
 
-  onMount(() => {
-    if (book.coverBlob) {
-      coverSrc = URL.createObjectURL(book.coverBlob);
-      return () => { if (coverSrc) URL.revokeObjectURL(coverSrc); };
-    } else if (book.coverUrl) {
-      coverSrc = book.coverUrl;
+  onMount(async () => {
+    const base64 = await getCoverBase64(book.id);
+    if (base64) {
+      coverSrc = base64;
     }
   });
 </script>
@@ -29,7 +28,6 @@
         <span class="text-[9px] text-ink-muted mt-1">{book.authors.join(', ')}</span>
       </div>
     {/if}
-    <!-- Spine effect -->
     <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-black/[0.06] dark:bg-white/[0.08]"></div>
   </div>
   <div class="w-full px-0.5">

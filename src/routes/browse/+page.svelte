@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { db } from '$lib/db';
+  import { getBooks } from '$lib/services/books';
+  import { getAllSeries } from '$lib/services/series';
+  import { getBooksBySeries } from '$lib/services/books';
   import type { Series } from '$lib/db';
   import { t } from '$lib/i18n/index.svelte';
 
@@ -9,8 +11,8 @@
   let authors = $state<{ name: string; count: number }[]>([]);
   let tab = $state<'categories' | 'series' | 'authors'>('categories');
 
-  onMount(async () => {
-    const books = await db.books.toArray();
+  onMount(() => {
+    const books = getBooks();
     const catMap = new Map<string, number>();
     const authorMap = new Map<string, number>();
 
@@ -31,13 +33,11 @@
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
-    const allSeries = await db.series.toArray();
-    seriesList = await Promise.all(
-      allSeries.map(async (s) => ({
-        ...s,
-        count: await db.books.where('seriesId').equals(s.id).count()
-      }))
-    );
+    const allSeries = getAllSeries();
+    seriesList = allSeries.map((s) => ({
+      ...s,
+      count: getBooksBySeries(s.id).length
+    }));
   });
 </script>
 

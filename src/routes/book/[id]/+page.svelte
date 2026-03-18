@@ -7,12 +7,12 @@
   import { resizeImage } from '$lib/services/covers';
   import { getCurrentUser } from '$lib/stores/user.svelte';
   import { getAllSeries, createSeries } from '$lib/services/series';
-  import { db } from '$lib/db';
+  import { q } from '$lib/db';
   import type { Book, UserBookData, Series, Shelf } from '$lib/db';
   import { showConfirm, showPrompt } from '$lib/stores/dialog.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
   import { t } from '$lib/i18n/index.svelte';
-  import { cacheCoverIfNeeded } from '$lib/services/coverCache';
+  import { cacheCoverIfNeeded, getCoverBase64, setCoverBase64 } from '$lib/services/coverCache';
   import { getUserShelves, addBookToShelf, removeBookFromShelf } from '$lib/services/shelves';
 
   let book = $state<Book | null>(null);
@@ -21,6 +21,7 @@
   let bookShelfIds = $state<Set<string>>(new Set());
   let user = $derived(getCurrentUser());
   let editing = $state(false);
+  let coverSrc = $state<string | null>(null);
 
   // Edit form fields
   let editTitle = $state('');
@@ -36,19 +37,24 @@
   onMount(async () => {
     const id = page.params.id;
     if (!id) return;
-    book = (await getBookById(id)) || null;
+    book = getBookById(id) || null;
     if (book && user) {
-      userData = await getUserBookData(user.id, book.id);
+      userData = getUserBookData(user.id, book.id);
     }
     if (book?.seriesId) {
-      const s = await db.series.get(book.seriesId);
+      const s = q.getItem('series', book.seriesId) as Series | undefined;
       if (s) seriesName = s.name;
     }
-    // Cache cover for offline use
-    if (book) cacheCoverIfNeeded(book.id);
+    // Load cover from cache or URL
+    if (book) {
+      const base64 = await getCoverBase64(book.id);
+      coverSrc = base64 || book.coverUrl || null;
+      // Cache cover for offline use
+      cacheCoverIfNeeded(book.id);
+    }
     // Load shelves
     if (user) {
-      shelves = await getUserShelves(user.id);
+      shelves = getUserShelves(user.id);
       if (book) {
         bookShelfIds = new Set(shelves.filter(s => s.bookIds.includes(book!.id)).map(s => s.id));
       }
@@ -64,13 +70,13 @@
     editSeriesId = book.seriesId || '';
     editSeriesOrder = book.seriesOrder?.toString() || '';
     newSeriesName = '';
-    getAllSeries().then(s => seriesList = s);
+    seriesList = getAllSeries();
     editing = true;
   }
 
-  async function saveEdit() {
+  function saveEdit() {
     if (!book || !editTitle.trim()) return;
-    await updateBook(book.id, {
+    updateBook(book.id, {
       title: editTitle.trim(),
       authors: editAuthors.split(',').map(a => a.trim()).filter(Boolean),
       isbn: editIsbn.trim() || undefined,
@@ -78,9 +84,9 @@
       seriesId: editSeriesId || undefined,
       seriesOrder: editSeriesOrder ? parseInt(editSeriesOrder) : undefined
     });
-    book = await getBookById(book.id) || null;
+    book = getBookById(book.id) || null;
     if (book?.seriesId) {
-      const s = await db.series.get(book.seriesId);
+      const s = q.getItem('series', book.seriesId) as Series | undefined;
       seriesName = s?.name || '';
     } else {
       seriesName = '';
@@ -88,32 +94,25 @@
     editing = false;
   }
 
-  function getCoverSrc(): string | null {
-    if (!book) return null;
-    if (book.coverBlob) return URL.createObjectURL(book.coverBlob);
-    if (book.coverUrl) return book.coverUrl;
-    return null;
-  }
-
-  async function updateStatus(status: 'unread' | 'reading' | 'read' | 'dnf') {
+  function updateStatus(status: 'unread' | 'reading' | 'read' | 'dnf') {
     if (!user || !book) return;
-    userData = await setUserBookData(user.id, book.id, { status });
+    userData = setUserBookData(user.id, book.id, { status });
   }
 
-  async function updateRating(rating: number) {
+  function updateRating(rating: number) {
     if (!user || !book) return;
-    userData = await setUserBookData(user.id, book.id, { rating });
+    userData = setUserBookData(user.id, book.id, { rating });
   }
 
-  async function updateNotes(e: Event) {
+  function updateNotes(e: Event) {
     const textarea = e.target as HTMLTextAreaElement;
     if (!user || !book) return;
-    userData = await setUserBookData(user.id, book.id, { notes: textarea.value });
+    userData = setUserBookData(user.id, book.id, { notes: textarea.value });
   }
 
-  async function toggleWishlist() {
+  function toggleWishlist() {
     if (!user || !book) return;
-    userData = await setUserBookData(user.id, book.id, { isWishlist: !userData?.isWishlist });
+    userData = setUserBookData(user.id, book.id, { isWishlist: !userData?.isWishlist });
   }
 
   async function handleLend() {
@@ -125,13 +124,13 @@
       confirmLabel: t('dialog.lend_confirm')
     });
     if (!name) return;
-    userData = await setUserBookData(user.id, book.id, { lentTo: name, lentDate: new Date() });
+    userData = setUserBookData(user.id, book.id, { lentTo: name, lentDate: new Date().toISOString() });
     showToast(t('toast.lent', { name }), 'success');
   }
 
-  async function handleReturn() {
+  function handleReturn() {
     if (!user || !book) return;
-    userData = await setUserBookData(user.id, book.id, { lentTo: undefined, lentDate: undefined });
+    userData = setUserBookData(user.id, book.id, { lentTo: undefined, lentDate: undefined });
     showToast(t('toast.returned'), 'success');
   }
 
@@ -140,8 +139,14 @@
     const file = input.files?.[0];
     if (!file || !book) return;
     const blob = await resizeImage(file);
-    await updateBook(book.id, { coverBlob: blob });
-    book = await getBookById(book.id) || null;
+    const reader = new FileReader();
+    const base64 = await new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    await setCoverBase64(book.id, base64);
+    coverSrc = base64;
   }
 
   async function handleDelete() {
@@ -153,7 +158,7 @@
       danger: true
     });
     if (!confirmed) return;
-    await deleteBook(book.id);
+    deleteBook(book.id);
     showToast(t('toast.deleted'), 'info');
     goto('/');
   }
@@ -164,21 +169,21 @@
       : null
   );
 
-  async function updateProgress(field: 'currentPage' | 'totalPages', value: string) {
+  function updateProgress(field: 'currentPage' | 'totalPages', value: string) {
     if (!user || !book) return;
     const num = parseInt(value) || undefined;
-    userData = await setUserBookData(user.id, book.id, { [field]: num });
+    userData = setUserBookData(user.id, book.id, { [field]: num });
   }
 
-  async function toggleShelf(shelf: Shelf) {
+  function toggleShelf(shelf: Shelf) {
     if (!book) return;
     if (bookShelfIds.has(shelf.id)) {
-      await removeBookFromShelf(shelf.id, book.id);
+      removeBookFromShelf(shelf.id, book.id);
       bookShelfIds.delete(shelf.id);
       bookShelfIds = new Set(bookShelfIds);
       showToast(t('toast.book_removed_from_shelf', { name: shelf.name }), 'info');
     } else {
-      await addBookToShelf(shelf.id, book.id);
+      addBookToShelf(shelf.id, book.id);
       bookShelfIds.add(shelf.id);
       bookShelfIds = new Set(bookShelfIds);
       showToast(t('toast.book_added_to_shelf', { name: shelf.name }), 'success');
@@ -197,18 +202,16 @@
   <p class="text-ink-muted text-center py-12">{t('book.not_found')}</p>
 {:else}
   <div class="max-w-lg mx-auto animate-fade-up">
-    <!-- Back button -->
     <button onclick={() => history.back()} class="flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink mb-4 transition-colors">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       {t('common.back')}
     </button>
 
     {#if editing}
-      <!-- Edit mode -->
       <div class="flex gap-5 mb-6 items-start">
         <div class="w-20 h-28 rounded-lg overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
-          {#if getCoverSrc()}
-            <img src={getCoverSrc()} alt={book.title} class="w-full h-full object-cover" />
+          {#if coverSrc}
+            <img src={coverSrc} alt={book.title} class="w-full h-full object-cover" />
           {:else}
             <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-warm-100 to-warm-200 text-ink-muted text-[10px] text-center px-2 font-display">{book.title}</div>
           {/if}
@@ -262,10 +265,10 @@
             <input type="text" bind:value={newSeriesName} placeholder={t('add.series_create')}
               class="input-field flex-1" />
             <button type="button" class="btn-secondary"
-              onclick={async () => {
+              onclick={() => {
                 if (!newSeriesName.trim()) return;
-                const s = await createSeries(newSeriesName.trim());
-                seriesList = await getAllSeries();
+                const s = createSeries(newSeriesName.trim());
+                seriesList = getAllSeries();
                 editSeriesId = s.id;
                 newSeriesName = '';
               }}>{t('add.series_add')}</button>
@@ -278,13 +281,11 @@
         </div>
       </form>
     {:else}
-      <!-- View mode -->
-      <!-- Hero: Cover + Info side by side -->
       <div class="flex gap-6 mb-8">
         <div class="flex-shrink-0">
           <div class="w-32 h-44 rounded-lg overflow-hidden book-shadow-lg bg-warm-100">
-            {#if getCoverSrc()}
-              <img src={getCoverSrc()} alt={book.title} class="w-full h-full object-cover" />
+            {#if coverSrc}
+              <img src={coverSrc} alt={book.title} class="w-full h-full object-cover" />
             {:else}
               <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-warm-100 to-warm-200 text-ink-muted text-xs text-center px-3 font-display">
                 {book.title}
@@ -324,7 +325,6 @@
             </p>
           {/if}
 
-          <!-- Rating inline -->
           <div class="flex gap-0.5 mt-3">
             {#each [1, 2, 3, 4, 5] as star}
               <button
@@ -336,7 +336,6 @@
         </div>
       </div>
 
-      <!-- Status pills -->
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.status')}</h2>
         <div class="flex gap-2">
@@ -349,7 +348,6 @@
         </div>
       </div>
 
-      <!-- Reading Progress (only for "reading" status) -->
       {#if userData?.status === 'reading'}
         <div class="mb-6 animate-fade-up">
           <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.progress')}</h2>
@@ -397,7 +395,6 @@
         </div>
       {/if}
 
-      <!-- Notes -->
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.notes')}</h2>
         <textarea
@@ -408,7 +405,6 @@
         ></textarea>
       </div>
 
-      <!-- Lending -->
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.lending')}</h2>
         {#if userData?.lentTo}
@@ -425,7 +421,6 @@
         {/if}
       </div>
 
-      <!-- Shelves -->
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('shelves.add_to')}</h2>
         {#if shelves.length > 0}
@@ -444,7 +439,6 @@
         {/if}
       </div>
 
-      <!-- Danger zone -->
       <div class="mt-8 pt-6 border-t border-warm-100">
         <button
           class="text-xs text-warm-400 hover:text-berry transition-colors"

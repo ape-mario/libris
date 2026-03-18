@@ -20,9 +20,9 @@
   let recs = $state<Recommendation[]>([]);
   let loadingRecs = $state(false);
 
-  onMount(async () => {
+  onMount(() => {
     if (user) {
-      stats = await getReadingStats(user.id);
+      stats = getReadingStats(user.id);
 
       // Load goal
       const goal = getGoal(user.id);
@@ -30,9 +30,9 @@
         goalTarget = goal.target.toString();
         hasGoal = true;
       }
-      goalRead = await getBooksReadThisYear(user.id);
+      goalRead = getBooksReadThisYear(user.id);
 
-      // Load recommendations in background
+      // Load recommendations in background (still async - external API)
       loadingRecs = true;
       getRecommendations(6).then(r => {
         recs = r;

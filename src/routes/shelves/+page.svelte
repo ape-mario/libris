@@ -18,28 +18,26 @@
 
   onMount(() => loadShelves());
 
-  async function loadShelves() {
+  function loadShelves() {
     if (!user) return;
     loading = true;
-    const raw = await getUserShelves(user.id);
-    shelves = await Promise.all(
-      raw.map(async (shelf) => {
-        const books = (await Promise.all(
-          shelf.bookIds.map(id => getBookById(id))
-        )).filter(Boolean) as Book[];
-        return { ...shelf, books };
-      })
-    );
+    const raw = getUserShelves(user.id);
+    shelves = raw.map((shelf) => {
+      const books = shelf.bookIds
+        .map((id) => getBookById(id))
+        .filter(Boolean) as Book[];
+      return { ...shelf, books };
+    });
     loading = false;
   }
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!newShelfName.trim() || !user) return;
-    await createShelf(user.id, newShelfName.trim());
+    createShelf(user.id, newShelfName.trim());
     showToast(t('toast.shelf_created'), 'success');
     newShelfName = '';
     showCreate = false;
-    await loadShelves();
+    loadShelves();
   }
 
   async function handleDelete(shelf: Shelf) {
@@ -49,9 +47,9 @@
       confirmLabel: t('dialog.delete_confirm')
     });
     if (!confirmed) return;
-    await deleteShelf(shelf.id);
+    deleteShelf(shelf.id);
     showToast(t('toast.shelf_deleted'), 'info');
-    await loadShelves();
+    loadShelves();
   }
 </script>
 

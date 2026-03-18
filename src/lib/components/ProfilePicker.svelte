@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getAllUsers, createUser, setCurrentUser } from '$lib/stores/user.svelte';
+  import { q } from '$lib/db';
   import type { User } from '$lib/db';
-  import { db } from '$lib/db';
   import { onMount } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { getLocale, setLocale } from '$lib/i18n/index.svelte';
@@ -24,32 +24,29 @@
     'bg-warm-200 text-warm-700',
   ];
 
-  onMount(async () => {
-    await loadUsers();
+  onMount(() => {
+    loadUsers();
   });
 
-  async function loadUsers() {
-    const allUsers = await getAllUsers();
-    const totalBooks = await db.books.count();
+  function loadUsers() {
+    const allUsers = getAllUsers();
+    const totalBooks = q.getAll('books').length;
 
-    users = await Promise.all(
-      allUsers.map(async (user) => {
-        const userData = await db.userBookData.where('userId').equals(user.id).toArray();
-        const readCount = userData.filter(d => d.status === 'read').length;
-        return { ...user, bookCount: totalBooks, readCount };
-      })
-    );
+    users = allUsers.map((user) => {
+      const userData = q.filter('userBookData', (d) => d.userId === user.id);
+      const readCount = userData.filter((d) => d.status === 'read').length;
+      return { ...user, bookCount: totalBooks, readCount };
+    });
   }
 
-  async function handleSelect(user: UserWithStats) {
+  function handleSelect(user: UserWithStats) {
     setCurrentUser(user);
   }
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!newName.trim()) return;
-    await createUser(newName.trim());
-    await loadUsers();
-    // Auto-select the newly created user (last one)
+    createUser(newName.trim());
+    loadUsers();
     const latest = users[users.length - 1];
     if (latest) setCurrentUser(latest);
     newName = '';
@@ -58,7 +55,6 @@
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-screen bg-cream p-6 relative">
-  <!-- Language toggle (top-right) -->
   <button
     class="absolute top-5 right-5 text-xs text-ink-muted hover:text-ink transition-colors font-medium"
     onclick={() => setLocale(locale === 'en' ? 'id' : 'en')}

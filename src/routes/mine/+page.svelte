@@ -16,29 +16,27 @@
 
   onMount(() => loadTab());
 
-  async function loadTab() {
+  function loadTab() {
     if (!user) return;
     loading = true;
     let data: UserBookData[];
 
     if (tab === 'reading') {
-      data = await getUserBooks(user.id, { status: 'reading' });
+      data = getUserBooks(user.id, { status: 'reading' });
     } else if (tab === 'wishlist') {
-      data = await getUserBooks(user.id, { isWishlist: true });
+      data = getUserBooks(user.id, { isWishlist: true });
     } else if (tab === 'lent') {
-      data = await getLentBooks(user.id);
+      data = getLentBooks(user.id);
     } else if (tab === 'dnf') {
-      data = await getUserBooks(user.id, { status: 'dnf' });
+      data = getUserBooks(user.id, { status: 'dnf' });
     } else {
-      data = await getUserBooks(user.id, { status: 'read' });
+      data = getUserBooks(user.id, { status: 'read' });
     }
 
-    const enriched = await Promise.all(
-      data.map(async (d) => {
-        const book = await getBookById(d.bookId);
-        return book ? { ...d, book } : null;
-      })
-    );
+    const enriched = data.map((d) => {
+      const book = getBookById(d.bookId);
+      return book ? { ...d, book } : null;
+    });
     books = enriched.filter(Boolean) as (UserBookData & { book: Book })[];
     loading = false;
   }
@@ -85,8 +83,8 @@
             onclick={() => goto(`/book/${item.bookId}`)}
           >
             <div class="w-10 h-14 rounded overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
-              {#if item.book.coverBlob || item.book.coverUrl}
-                <img src={item.book.coverBlob ? URL.createObjectURL(item.book.coverBlob) : item.book.coverUrl} alt={item.book.title} class="w-full h-full object-cover" />
+              {#if item.book.coverUrl}
+                <img src={item.book.coverUrl} alt={item.book.title} class="w-full h-full object-cover" />
               {/if}
             </div>
             <div class="min-w-0">

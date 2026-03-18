@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto, afterNavigate } from '$app/navigation';
   import { getBooks, searchBooks, getBooksByCategory } from '$lib/services/books';
-  import { db } from '$lib/db';
   import type { Book } from '$lib/db';
   import BookCard from '$lib/components/BookCard.svelte';
   import { t, bookCount } from '$lib/i18n/index.svelte';
+  import { onMount } from 'svelte';
 
   type SortKey = 'recent' | 'title' | 'author';
 
@@ -24,38 +23,36 @@
     loadLibrary();
   });
 
-  // Reload data when navigating back to this page (e.g., after adding a book)
   afterNavigate(() => {
     if (initialized) {
       loadLibrary();
     }
   });
 
-  async function loadLibrary() {
+  function loadLibrary() {
     loading = true;
-    allBooks = await getBooks();
+    allBooks = getBooks();
     const catSet = new Set<string>();
     for (const book of allBooks) {
       for (const cat of book.categories) catSet.add(cat);
     }
     categories = [...catSet].sort();
-    await applyFilters();
+    applyFilters();
     loading = false;
     initialized = true;
   }
 
-  async function applyFilters() {
+  function applyFilters() {
     let result: Book[];
 
     if (query.trim()) {
-      result = await searchBooks(query);
+      result = searchBooks(query);
     } else if (filterCategory) {
-      result = await getBooksByCategory(filterCategory);
+      result = getBooksByCategory(filterCategory);
     } else {
-      result = await getBooks();
+      result = getBooks();
     }
 
-    // Apply sort
     if (sortBy === 'title') {
       result.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === 'author') {
@@ -113,7 +110,6 @@
     {/if}
   </div>
 
-  <!-- Search -->
   <div class="mb-4">
     <div class="relative">
       <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -127,10 +123,8 @@
     </div>
   </div>
 
-  <!-- Sort & Filter controls -->
   {#if showFilters && allBooks.length > 0}
     <div class="mb-5 flex flex-col gap-3 animate-fade-up">
-      <!-- Sort -->
       <div class="flex items-center gap-2">
         <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">{t('library.sort')}</span>
         <div class="flex gap-1.5 overflow-x-auto pb-0.5">
@@ -143,7 +137,6 @@
         </div>
       </div>
 
-      <!-- Category filter -->
       {#if categories.length > 0}
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">{t('library.filter')}</span>

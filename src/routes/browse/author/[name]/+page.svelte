@@ -10,8 +10,8 @@
   let books = $state<Book[]>([]);
   let name = $derived(decodeURIComponent(page.params.name!));
 
-  onMount(async () => {
-    const allBooks = await getBooks();
+  onMount(() => {
+    const allBooks = getBooks();
     books = allBooks.filter((b) => b.authors.some((a) => a === name));
   });
 </script>

@@ -176,7 +176,7 @@ export function createQueryHelpers(doc: Y.Doc) {
 		callback: (changes: { action: string; key: string }[]) => void
 	): () => void {
 		const map = doc.getMap(mapName);
-		const handler = (events: Y.YEvent<unknown>[]) => {
+		const handler = (events: Y.YEvent<any>[]) => {
 			const changes: { action: string; key: string }[] = [];
 			const seen = new Set<string>();
 			for (const event of events) {
@@ -190,19 +190,19 @@ export function createQueryHelpers(doc: Y.Doc) {
 					});
 				} else {
 					// Nested change — walk up to find the top-level key
-					let target: Y.AbstractType<unknown> | null = event.target;
+					let target: Y.AbstractType<any> | null = event.target as Y.AbstractType<any>;
 					while (target && target !== map) {
 						const parent = target.parent;
 						if (parent === map && parent instanceof Y.Map) {
 							// Find the key for this target in the parent map
-							parent.forEach((value, key) => {
+							(parent as Y.Map<unknown>).forEach((value, key) => {
 								if (value === target && !seen.has(key)) {
 									seen.add(key);
 									changes.push({ action: 'update', key });
 								}
 							});
 						}
-						target = parent as Y.AbstractType<unknown> | null;
+						target = parent as Y.AbstractType<any> | null;
 					}
 				}
 			}
