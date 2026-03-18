@@ -183,8 +183,12 @@ export async function migrateFromDexie(
 						if (lastUnderscore > 0) {
 							const userId = rest.slice(0, lastUnderscore);
 							const year = rest.slice(lastUnderscore + 1);
+							const target = parseInt(value);
+							if (!Number.isFinite(target) || target < 1) continue;
 							const ymap = new Y.Map<any>();
-							ymap.set('target', parseInt(value));
+							ymap.set('target', target);
+							ymap.set('userId', userId);
+							ymap.set('year', parseInt(year));
 							goalsMap.set(`${userId}:${year}`, ymap);
 							goalCount++;
 						}

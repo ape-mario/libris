@@ -85,6 +85,8 @@ async function deleteCoverFromCache(bookId: string) {
 		});
 		const tx = db.transaction('covers', 'readwrite');
 		tx.objectStore('covers').delete(bookId);
+		tx.oncomplete = () => db.close();
+		tx.onerror = () => db.close();
 	} catch {
 		// Cover cleanup is best-effort
 	}

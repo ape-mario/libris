@@ -8,8 +8,13 @@ export const q = createQueryHelpers(doc);
 let persistence: IndexeddbPersistence | null = null;
 
 export function initDoc(): Promise<void> {
-	return new Promise((resolve) => {
-		persistence = new IndexeddbPersistence('libris-crdt', doc);
+	return new Promise((resolve, reject) => {
+		try {
+			persistence = new IndexeddbPersistence('libris-crdt', doc);
+		} catch (e) {
+			reject(e);
+			return;
+		}
 		persistence.once('synced', () => {
 			const meta = doc.getMap('meta');
 			if (!meta.get('schemaVersion')) {

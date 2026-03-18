@@ -17,6 +17,7 @@ type SetupFn = (
 export function createProvider(setup: SetupFn): SyncProvider {
 	let instance: { destroy: () => void } | null = null;
 	let currentStatus: SyncStatus = 'disconnected';
+	let pendingOnlineHandler: (() => void) | null = null;
 	const listeners = new Set<(status: SyncStatus) => void>();
 
 	function setStatus(status: SyncStatus) {
@@ -24,13 +25,21 @@ export function createProvider(setup: SetupFn): SyncProvider {
 		listeners.forEach((cb) => cb(status));
 	}
 
+	function cleanupOnlineListener() {
+		if (pendingOnlineHandler) {
+			window.removeEventListener('online', pendingOnlineHandler);
+			pendingOnlineHandler = null;
+		}
+	}
+
 	const provider: SyncProvider = {
 		connect(doc: Y.Doc, roomCode: string) {
+			cleanupOnlineListener();
+
 			if (typeof navigator !== 'undefined' && !navigator.onLine) {
 				setStatus('offline');
-				window.addEventListener('online', () => provider.connect(doc, roomCode), {
-					once: true
-				});
+				pendingOnlineHandler = () => provider.connect(doc, roomCode);
+				window.addEventListener('online', pendingOnlineHandler, { once: true });
 				return;
 			}
 
@@ -46,6 +55,7 @@ export function createProvider(setup: SetupFn): SyncProvider {
 		},
 
 		disconnect() {
+			cleanupOnlineListener();
 			instance?.destroy();
 			instance = null;
 			setStatus('disconnected');

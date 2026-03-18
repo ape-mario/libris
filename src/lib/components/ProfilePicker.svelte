@@ -45,10 +45,9 @@
 
   function handleCreate() {
     if (!newName.trim()) return;
-    createUser(newName.trim());
+    const newUser = createUser(newName.trim());
     loadUsers();
-    const latest = users[users.length - 1];
-    if (latest) setCurrentUser(latest);
+    setCurrentUser(newUser);
     newName = '';
     showCreate = false;
   }
