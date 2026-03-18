@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto, afterNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { getBooks, searchBooks, getBooksByCategory } from '$lib/services/books';
@@ -20,7 +21,11 @@
   let showFilters = $state(false);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // afterNavigate fires on initial load AND on every navigation back to this page
+  onMount(() => {
+    loadLibrary();
+  });
+
+  // afterNavigate fires on every client-side navigation back to this page
   afterNavigate(() => {
     loadLibrary();
   });
