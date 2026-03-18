@@ -9,6 +9,7 @@ export default {
   'profile.add': 'Add Profile',
   'profile.placeholder': 'Your name',
   'profile.go': 'Go',
+  'profile.syncing': 'Syncing from another device...',
 
   // Top bar
   'topbar.add': '+ Add Book',

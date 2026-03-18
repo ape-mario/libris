@@ -56,35 +56,17 @@
       console.warn('[Libris] Migration check failed:', e);
     }
 
-    // Handle /join/[code] URL — must happen before restoreUser so sync
-    // starts before ProfilePicker renders on a fresh device
-    let joinedFromLink = false;
+    // Handle /join/[code] URL or auto-reconnect to previous room.
+    // Must happen before restoreUser so sync starts immediately.
     try {
       const { joinRoom, autoReconnect } = await import('$lib/sync/manager');
       const { isValidRoomCode, formatRoomCode } = await import('$lib/sync/room');
-      const { isDocEmpty } = await import('$lib/db');
 
       const joinMatch = page.url.pathname.match(/\/join\/([A-Za-z2-9-]+)$/);
       if (joinMatch) {
         const code = formatRoomCode(joinMatch[1]);
         if (isValidRoomCode(code)) {
           joinRoom(code);
-          // On a fresh device, wait for initial sync from peer (up to 5s)
-          if (isDocEmpty()) {
-            joinedFromLink = true;
-            const { doc } = await import('$lib/db');
-            await new Promise<void>(resolve => {
-              const timeout = setTimeout(resolve, 5000);
-              const handler = () => {
-                if (!isDocEmpty()) {
-                  clearTimeout(timeout);
-                  doc.off('update', handler);
-                  resolve();
-                }
-              };
-              doc.on('update', handler);
-            });
-          }
         }
       } else {
         autoReconnect();

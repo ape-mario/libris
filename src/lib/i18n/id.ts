@@ -9,6 +9,7 @@ export default {
   'profile.add': 'Tambah Profil',
   'profile.placeholder': 'Nama kamu',
   'profile.go': 'Mulai',
+  'profile.syncing': 'Menyinkronkan dari perangkat lain...',
 
   // Top bar
   'topbar.add': '+ Tambah Buku',

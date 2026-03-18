@@ -2,7 +2,7 @@
   import { getAllUsers, createUser, setCurrentUser } from '$lib/stores/user.svelte';
   import { q } from '$lib/db';
   import type { User } from '$lib/db';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
   import { getLocale, setLocale } from '$lib/i18n/index.svelte';
 
@@ -15,6 +15,8 @@
   let newName = $state('');
   let showCreate = $state(false);
   let locale = $derived(getLocale());
+  let syncing = $state(false);
+  let unsubscribe: (() => void) | null = null;
 
   const avatarColors = [
     'bg-accent/10 text-accent',
@@ -26,6 +28,19 @@
 
   onMount(() => {
     loadUsers();
+    // Observe Y.Doc 'users' map for sync updates (new users arriving from peers)
+    unsubscribe = q.observe('users', () => {
+      loadUsers();
+    });
+    // Show syncing indicator if we're in a room with no users yet
+    if (users.length === 0) {
+      const roomCode = localStorage.getItem('libris_room_code');
+      if (roomCode) syncing = true;
+    }
+  });
+
+  onDestroy(() => {
+    unsubscribe?.();
   });
 
   function loadUsers() {
@@ -37,6 +52,8 @@
       const readCount = userData.filter((d) => d.status === 'read').length;
       return { ...user, bookCount: totalBooks, readCount };
     });
+
+    if (users.length > 0) syncing = false;
   }
 
   function handleSelect(user: UserWithStats) {
@@ -64,7 +81,14 @@
 
   <div class="animate-fade-up flex flex-col items-center">
     <span class="font-display text-4xl text-ink font-bold tracking-tight mb-2">{t('profile.title')}</span>
-    <p class="text-ink-muted text-sm mb-12">{t('profile.subtitle')}</p>
+    <p class="text-ink-muted text-sm mb-8">{t('profile.subtitle')}</p>
+
+    {#if syncing}
+      <div class="flex items-center gap-2 mb-8 animate-fade-in">
+        <div class="w-6 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
+        <span class="text-xs text-ink-muted">{t('profile.syncing')}</span>
+      </div>
+    {/if}
 
     <div class="flex gap-8 flex-wrap justify-center mb-10">
       {#each users as user, i}
