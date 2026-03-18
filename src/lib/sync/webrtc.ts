@@ -18,7 +18,6 @@ export function createWebRTCProvider(): SyncProvider {
 			import('y-webrtc')
 				.then(({ WebrtcProvider }) => {
 					provider = new WebrtcProvider(`libris-${roomCode}`, doc, {
-						// Public signaling servers (free)
 						signaling: [
 							'wss://signaling.yjs.dev',
 							'wss://y-webrtc-signaling-eu.herokuapp.com',
@@ -31,19 +30,16 @@ export function createWebRTCProvider(): SyncProvider {
 					});
 
 					provider.on('peers', ({ webrtcPeers }: { webrtcPeers: any[] }) => {
-						// Connected when at least one peer is found
 						if (webrtcPeers.length > 0) {
 							setStatus('connected');
+						} else if (currentStatus === 'connected') {
+							// Lost all peers — back to waiting
+							setStatus('connecting');
 						}
 					});
 
-					// Mark as connected once the provider is ready
-					// (even if no peers yet — we're "listening")
-					setTimeout(() => {
-						if (currentStatus === 'connecting') {
-							setStatus('connected');
-						}
-					}, 2000);
+					// After signaling setup, mark as "waiting" (not fake "connected")
+					// Status stays 'connecting' until an actual peer connects
 				})
 				.catch(() => {
 					setStatus('disconnected');

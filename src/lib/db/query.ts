@@ -154,9 +154,16 @@ export function createQueryHelpers(doc: Y.Doc) {
 					}
 					entry.set(key, setMap);
 				} else if (Array.isArray(value)) {
-					const yarray = new Y.Array<unknown>();
-					yarray.push(value);
-					entry.set(key, yarray);
+					// Replace Y.Array contents in-place for field-level CRDT merge
+					const existing = entry.get(key);
+					if (existing instanceof Y.Array) {
+						existing.delete(0, existing.length);
+						existing.push(value);
+					} else {
+						const yarray = new Y.Array<unknown>();
+						yarray.push(value);
+						entry.set(key, yarray);
+					}
 				} else {
 					entry.set(key, value);
 				}

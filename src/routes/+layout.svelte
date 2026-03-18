@@ -15,6 +15,7 @@
 
   let { children } = $props();
   let loaded = $state(false);
+  let initError = $state<string | null>(null);
   let user = $derived(getCurrentUser());
   let locale = $derived(getLocale());
 
@@ -28,14 +29,21 @@
     initTheme();
 
     // Initialize Y.Doc with IndexedDB persistence
-    await initDoc();
+    try {
+      await initDoc();
+    } catch (e) {
+      console.error('[Libris] Failed to initialize database:', e);
+      initError = e instanceof DOMException && e.name === 'QuotaExceededError'
+        ? 'Storage is full. Please free up space and reload.'
+        : 'Failed to load your library. Please reload the page.';
+      return;
+    }
 
     // Run one-time Dexie→Yjs migration if needed
     try {
       const { migrateFromDexie, shouldCleanupDexie, cleanupDexie } = await import('$lib/db/migrate');
       await migrateFromDexie((await import('$lib/db')).doc);
 
-      // Cleanup old Dexie DB after 90 days
       if (shouldCleanupDexie()) {
         await cleanupDexie();
       }
@@ -57,7 +65,18 @@
   });
 </script>
 
-{#if !loaded}
+{#if initError}
+  <div class="min-h-screen bg-cream flex items-center justify-center p-6">
+    <div class="text-center max-w-sm">
+      <div class="w-16 h-16 rounded-2xl bg-berry/10 mx-auto mb-4 flex items-center justify-center">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-berry"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+      </div>
+      <p class="font-display text-lg text-ink font-semibold mb-2">Something went wrong</p>
+      <p class="text-sm text-ink-muted mb-6">{initError}</p>
+      <button class="btn-primary" onclick={() => location.reload()}>Reload</button>
+    </div>
+  </div>
+{:else if !loaded}
   <div class="min-h-screen bg-cream flex items-center justify-center">
     <div class="animate-fade-in flex flex-col items-center gap-3">
       <span class="font-display text-2xl text-ink font-semibold tracking-tight">{t('app.name')}</span>

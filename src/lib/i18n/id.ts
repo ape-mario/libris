@@ -27,6 +27,7 @@ export default {
   'library.empty.subtitle': 'Mulai bangun koleksi bukumu',
   'library.empty.cta': 'Tambah buku pertama',
   'library.no_results': 'Tidak ada buku yang cocok',
+  'library.show_more': 'Tampilkan lagi',
   'library.book_count': '{count} buku',
   'library.sort': 'Urutkan',
   'library.sort.recent': 'Terbaru',

@@ -27,6 +27,7 @@ export default {
   'library.empty.subtitle': 'Start building your collection',
   'library.empty.cta': 'Add your first book',
   'library.no_results': 'No books match',
+  'library.show_more': 'Show more',
   'library.book_count': '{count} {count, plural, one {book} other {books}}',
   'library.sort': 'Sort',
   'library.sort.recent': 'Recent',

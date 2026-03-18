@@ -38,10 +38,11 @@
     const id = page.params.id;
     if (!id) return;
     book = getBookById(id) || null;
-    if (book && user) {
+    if (!book) return; // Book not found — template shows not_found message
+    if (user) {
       userData = getUserBookData(user.id, book.id);
     }
-    if (book?.seriesId) {
+    if (book.seriesId) {
       const s = q.getItem('series', book.seriesId) as Series | undefined;
       if (s) seriesName = s.name;
     }
@@ -101,7 +102,8 @@
 
   function updateRating(rating: number) {
     if (!user || !book) return;
-    userData = setUserBookData(user.id, book.id, { rating });
+    const clamped = Math.max(1, Math.min(5, Math.round(rating)));
+    userData = setUserBookData(user.id, book.id, { rating: clamped });
   }
 
   function updateNotes(e: Event) {

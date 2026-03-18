@@ -7,9 +7,11 @@
   import { onMount } from 'svelte';
 
   type SortKey = 'recent' | 'title' | 'author';
+  const PAGE_SIZE = 60;
 
   let allBooks = $state<Book[]>([]);
   let books = $state<Book[]>([]);
+  let visibleCount = $state(PAGE_SIZE);
   let query = $state('');
   let loading = $state(true);
   let sortBy = $state<SortKey>('recent');
@@ -42,7 +44,11 @@
     initialized = true;
   }
 
+  let visibleBooks = $derived(books.slice(0, visibleCount));
+  let hasMore = $derived(books.length > visibleCount);
+
   function applyFilters() {
+    visibleCount = PAGE_SIZE;
     let result: Book[];
 
     if (query.trim()) {
@@ -174,11 +180,18 @@
     <p class="text-center text-ink-muted py-12">{t('library.no_results')} "{query || filterCategory}"</p>
   {:else}
     <div class="flex flex-wrap gap-x-4 gap-y-6">
-      {#each books as book, i}
+      {#each visibleBooks as book, i}
         <div style="animation-delay: {Math.min(i * 40, 400)}ms" class="animate-fade-up">
           <BookCard {book} onclick={() => goto(`/book/${book.id}`)} />
         </div>
       {/each}
     </div>
+    {#if hasMore}
+      <div class="flex justify-center mt-8">
+        <button class="btn-secondary" onclick={() => visibleCount += PAGE_SIZE}>
+          {t('library.show_more')} ({books.length - visibleCount} more)
+        </button>
+      </div>
+    {/if}
   {/if}
 </div>

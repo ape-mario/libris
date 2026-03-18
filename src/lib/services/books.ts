@@ -1,4 +1,5 @@
-import { q, type Book } from '$lib/db';
+import { doc, q, type Book } from '$lib/db';
+import * as Y from 'yjs';
 
 type NewBook = Pick<Book, 'title' | 'authors' | 'categories'> &
 	Partial<Pick<Book, 'isbn' | 'coverUrl' | 'seriesId' | 'seriesOrder'>>;
@@ -37,11 +38,27 @@ export function updateBook(id: string, data: Partial<Omit<Book, 'id'>>): void {
 }
 
 export function deleteBook(id: string): void {
-	// Cascade delete userBookData entries for this book
+	// Cascade delete userBookData entries
 	const ubds = q.filter('userBookData', (d) => d.bookId === id);
 	for (const ubd of ubds) {
 		q.deleteItem('userBookData', `${ubd.userId}:${ubd.bookId}`);
 	}
+
+	// Remove book from all shelves (direct Y.Map manipulation)
+	const shelvesMap = doc.getMap('shelves');
+	doc.transact(() => {
+		shelvesMap.forEach((value) => {
+			if (!(value instanceof Y.Map)) return;
+			const bookIdsMap = value.get('bookIds');
+			if (bookIdsMap instanceof Y.Map && bookIdsMap.has(id)) {
+				bookIdsMap.delete(id);
+			}
+		});
+	});
+
+	// Delete cover from cache (async, fire-and-forget)
+	deleteCoverFromCache(id);
+
 	q.deleteItem('books', id);
 }
 
@@ -77,4 +94,18 @@ export function getBooksByCategory(category: string): Book[] {
 export function getBooksBySeries(seriesId: string): Book[] {
 	const books = q.filter('books', (b) => b.seriesId === seriesId) as unknown as Book[];
 	return books.sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0));
+}
+
+async function deleteCoverFromCache(bookId: string) {
+	try {
+		const db = await new Promise<IDBDatabase>((resolve, reject) => {
+			const req = indexedDB.open('libris-covers', 1);
+			req.onsuccess = () => resolve(req.result);
+			req.onerror = () => reject(req.error);
+		});
+		const tx = db.transaction('covers', 'readwrite');
+		tx.objectStore('covers').delete(bookId);
+	} catch {
+		// Cover cleanup is best-effort
+	}
 }
