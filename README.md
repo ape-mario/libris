@@ -2,6 +2,8 @@
 
 A personal book collection manager built as a Progressive Web App. Track your reading, organize with shelves, and share a single library across family profiles — all offline-first with no account required.
 
+**[Live Demo](https://ape-mario.github.io/libris/)** — demo berjalan di GitHub Pages. Semua fitur berfungsi secara offline. Untuk sync antar perangkat, kamu perlu deploy sync server sendiri (lihat bagian [Sinkronisasi](#sinkronisasi)).
+
 ## Fitur
 
 - **Multi-profil** — Satu katalog buku bersama, tracking bacaan per orang ("Siapa yang membaca hari ini?")
@@ -28,7 +30,6 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - [SvelteKit](https://svelte.dev) (Svelte 5 with runes)
 - [Tailwind CSS](https://tailwindcss.com) v4
 - [Yjs](https://yjs.dev) (CRDT-based data layer with y-indexeddb persistence)
-- [y-webrtc](https://github.com/nicoth-in/y-webrtc) (peer-to-peer sync, free)
 - [PartyKit](https://partykit.io) / [Hocuspocus](https://tiptap.dev/hocuspocus) (WebSocket sync providers)
 - [QuaggaJS](https://github.com/ericblade/quagga2) (barcode scanning)
 - [Vite PWA](https://vite-pwa-org.netlify.app) (service worker & manifest)
@@ -40,6 +41,8 @@ A personal book collection manager built as a Progressive Web App. Track your re
 npm install
 npm run dev
 ```
+
+App langsung bisa dipakai tanpa sync server — semua data disimpan lokal di browser.
 
 ## Skrip
 
@@ -61,7 +64,7 @@ src/
 │   ├── i18n/          # Terjemahan (en, id)
 │   ├── services/      # Business logic (books, stats, backup, dll.)
 │   ├── stores/        # Svelte stores (user, theme, toast, dialog)
-│   └── sync/          # Room codes, provider interface, WebRTC/PartyKit/Hocuspocus
+│   └── sync/          # Room codes, provider interface, PartyKit/Hocuspocus
 ├── routes/
 │   ├── add/           # Tambah buku (cari, manual, scan)
 │   ├── book/[id]/     # Detail & edit buku
@@ -72,45 +75,27 @@ src/
 │   ├── shelves/       # Rak buku kustom
 │   └── stats/         # Statistik & target membaca
 ├── static/            # Ikon PWA & aset
-partykit/              # PartyKit sync server (opsional)
+partykit/              # PartyKit sync server
 ```
 
 ## Sinkronisasi
 
+> **Penting:** Fitur sync membutuhkan sync server. Tanpa server, app tetap berfungsi penuh secara offline — data tersimpan lokal di browser. Deploy sync server hanya diperlukan jika kamu ingin sync data antar perangkat (misalnya laptop dan HP).
+
 Data disimpan lokal di IndexedDB via Yjs CRDTs. Sync bersifat opsional — buat atau join room dengan kode (format: `XXXX-XXXX`) untuk sync antar device secara real-time.
 
-Buka **Settings > Device Sync**, pilih provider, lalu **Create Room** atau **Join Room**.
+Buka **Settings > Device Sync**, lalu **Create Room** atau **Join Room**.
 
 ### Pilihan Provider
 
 | Provider | Biaya | Kelebihan | Kekurangan |
 |----------|-------|-----------|------------|
-| **WebRTC** (default) | Gratis, tanpa server | Langsung jalan, peer-to-peer | Kedua device harus online bersamaan |
-| **PartyKit** | Free tier (20 koneksi) | Data persist di cloud, offline-to-online sync | Perlu deploy server |
+| **PartyKit** (default) | Free tier (20 koneksi) | Data persist di cloud, offline-to-online sync | Perlu deploy server |
 | **Hocuspocus** | Self-hosted | Full kontrol, unlimited | Perlu VPS sendiri |
 
-### WebRTC (Gratis, Tanpa Server)
+### PartyKit (Rekomendasi)
 
-Langsung pakai — tidak perlu setup apapun. Browser sync langsung ke browser lain via WebRTC menggunakan signaling server publik gratis.
-
-```
-Device A (Chrome)  ←──WebRTC──→  Device B (HP)
-       ↕                              ↕
-   IndexedDB                      IndexedDB
-```
-
-**Cara pakai:**
-1. Buka Settings → Device Sync
-2. Provider: WebRTC (Free) — sudah default
-3. Klik **Create Room** → catat kode (misal `ABCD-EF23`)
-4. Di device lain, buka Settings → **Join Room** → masukkan kode
-5. Selesai — data sync otomatis selama kedua device online
-
-**Limitasi:** Kedua device harus online bersamaan. Kalau satu offline, sync terjadi saat keduanya kembali online.
-
-### PartyKit (Cloud, Free Tier)
-
-PartyKit menyimpan Y.Doc di cloud, jadi device bisa sync meskipun tidak online bersamaan.
+PartyKit menyimpan Y.Doc di cloud, jadi device bisa sync meskipun tidak online bersamaan. Free tier cukup untuk penggunaan pribadi/keluarga (20 concurrent connections, 1GB storage).
 
 ```
 Device A  ←──WebSocket──→  PartyKit Server  ←──WebSocket──→  Device B
@@ -119,7 +104,7 @@ Device A  ←──WebSocket──→  PartyKit Server  ←──WebSocket──
                         (data persist di cloud)
 ```
 
-**Cara kerja koneksi:**
+**Cara kerja:**
 
 1. Client membuat WebSocket connection ke `wss://<project>.partykit.dev/party/<room-code>`
 2. PartyKit server (`partykit/server.ts`) menggunakan `y-partykit` yang handle:
@@ -157,9 +142,15 @@ cd partykit && npm install && npm run dev
 npm run dev
 ```
 
-Lalu di Settings, pilih provider **PartyKit** dan buat/join room seperti biasa.
+Lalu buka Settings → **Create Room** atau **Join Room**.
 
-**Free tier limits:** 20 concurrent connections, 1GB storage — cukup untuk penggunaan pribadi/keluarga.
+#### Deploy dengan GitHub Pages
+
+Kalau kamu deploy frontend ke GitHub Pages, set `VITE_PARTYKIT_HOST` sebagai repository secret:
+
+1. Buka repo Settings → Secrets and variables → Actions
+2. Tambah secret: `VITE_PARTYKIT_HOST` = `libris-sync.<username>.partykit.dev`
+3. GitHub Actions workflow akan otomatis pakai secret ini saat build
 
 ### Hocuspocus (Self-Hosted)
 
