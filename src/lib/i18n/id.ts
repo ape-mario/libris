@@ -154,9 +154,14 @@ export default {
   'settings.sync_server_url': 'URL Server',
   'settings.sync_server_url_placeholder': 'wss://server-anda.com',
   'settings.sync_webrtc_hint': 'Peer-to-peer — kedua perangkat harus online bersamaan.',
+  'settings.sync_leave_confirm': 'Keluar dari ruang sync?',
+  'settings.sync_leave_confirm_message': 'Data tetap di perangkat ini, tapi tidak lagi sync dengan perangkat lain di ruang ini.',
+  'settings.import_confirm': 'Impor cadangan?',
+  'settings.import_confirm_message': 'Data cadangan akan digabungkan ke koleksi saat ini. Data yang ada bisa tertimpa.',
   'toast.sync_joined': 'Bergabung ke ruang',
   'toast.sync_left': 'Keluar dari ruang',
   'toast.sync_invalid_code': 'Kode ruang tidak valid',
+  'toast.export_failed': 'Ekspor gagal',
 
   // Scanner
   'scanner.hint': 'Arahkan kamera ke barcode buku',

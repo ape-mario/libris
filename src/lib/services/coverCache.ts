@@ -3,6 +3,7 @@ import { q, type Book } from '$lib/db';
 // Separate IndexedDB store for cover binary data (not synced via CRDT)
 const COVER_DB_NAME = 'libris-covers';
 const COVER_STORE = 'covers';
+const MAX_CACHE_SIZE_MB = 50; // Max cover cache size in MB
 
 function openCoverDB(): Promise<IDBDatabase> {
 	return new Promise((resolve, reject) => {
@@ -19,6 +20,11 @@ function openCoverDB(): Promise<IDBDatabase> {
 }
 
 export async function setCoverBase64(bookId: string, base64: string): Promise<void> {
+	// Check size limit before storing
+	if (await isCacheOverLimit()) {
+		console.warn('[Libris] Cover cache size limit reached, skipping cache for', bookId);
+		return;
+	}
 	const db = await openCoverDB();
 	return new Promise((resolve, reject) => {
 		const tx = db.transaction(COVER_STORE, 'readwrite');
@@ -29,13 +35,17 @@ export async function setCoverBase64(bookId: string, base64: string): Promise<vo
 }
 
 export async function getCoverBase64(bookId: string): Promise<string | null> {
-	const db = await openCoverDB();
-	return new Promise((resolve, reject) => {
-		const tx = db.transaction(COVER_STORE, 'readonly');
-		const request = tx.objectStore(COVER_STORE).get(bookId);
-		request.onsuccess = () => resolve(request.result || null);
-		request.onerror = () => reject(request.error);
-	});
+	try {
+		const db = await openCoverDB();
+		return new Promise((resolve, reject) => {
+			const tx = db.transaction(COVER_STORE, 'readonly');
+			const request = tx.objectStore(COVER_STORE).get(bookId);
+			request.onsuccess = () => resolve(request.result || null);
+			request.onerror = () => reject(request.error);
+		});
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -72,11 +82,27 @@ export async function cacheAllCovers(): Promise<void> {
 	const uncached = allBooks.filter((b) => !!b.coverUrl);
 
 	for (const book of uncached) {
+		// Stop if cache is over limit
+		if (await isCacheOverLimit()) break;
 		const existing = await getCoverBase64(book.id);
 		if (existing) continue;
 		await cacheCoverIfNeeded(book.id);
-		// Small delay to avoid hammering the network
 		await new Promise((r) => setTimeout(r, 200));
+	}
+}
+
+/**
+ * Check if cover cache exceeds the size limit.
+ */
+async function isCacheOverLimit(): Promise<boolean> {
+	try {
+		if (!navigator.storage?.estimate) return false;
+		const estimate = await navigator.storage.estimate();
+		const usedMB = (estimate.usage || 0) / (1024 * 1024);
+		// Be conservative: stop caching covers if total IndexedDB usage > limit
+		return usedMB > MAX_CACHE_SIZE_MB;
+	} catch {
+		return false;
 	}
 }
 

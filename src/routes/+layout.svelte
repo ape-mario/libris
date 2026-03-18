@@ -28,11 +28,15 @@
   onMount(async () => {
     initTheme();
 
+    // Install global error handler
+    const { installGlobalErrorHandler, logError } = await import('$lib/services/logger');
+    installGlobalErrorHandler();
+
     // Initialize Y.Doc with IndexedDB persistence
     try {
       await initDoc();
     } catch (e) {
-      console.error('[Libris] Failed to initialize database:', e);
+      logError('Failed to initialize database', { error: String(e) });
       initError = e instanceof DOMException && e.name === 'QuotaExceededError'
         ? 'Storage is full. Please free up space and reload.'
         : 'Failed to load your library. Please reload the page.';

@@ -17,8 +17,10 @@
     leaveRoom
   } from '$lib/sync/manager';
   import { getSyncConfig, saveSyncConfig, type SyncStatus, type ProviderType } from '$lib/sync/provider';
+  import { showConfirm } from '$lib/stores/dialog.svelte';
 
   let importing = $state(false);
+  let exporting = $state(false);
   let currentTheme = $derived(getTheme());
   let importingGoodreads = $state(false);
   let locale = $derived(getLocale());
@@ -93,7 +95,14 @@
     showToast(t('toast.sync_joined'), 'success');
   }
 
-  function handleLeaveRoom() {
+  async function handleLeaveRoom() {
+    const confirmed = await showConfirm({
+      title: t('settings.sync_leave_confirm'),
+      message: t('settings.sync_leave_confirm_message'),
+      confirmLabel: t('settings.sync_leave_room'),
+      danger: true
+    });
+    if (!confirmed) return;
     leaveRoom();
     roomCode = null;
     showToast(t('toast.sync_left'), 'info');
@@ -111,21 +120,36 @@
   }
 
   async function handleExport() {
-    const json = await exportData();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `libris-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast(t('toast.exported'), 'success');
+    exporting = true;
+    try {
+      const json = await exportData();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `libris-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(t('toast.exported'), 'success');
+    } catch {
+      showToast(t('toast.export_failed'), 'error');
+    }
+    exporting = false;
   }
 
   async function handleImport(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
+    const confirmed = await showConfirm({
+      title: t('settings.import_confirm'),
+      message: t('settings.import_confirm_message'),
+      confirmLabel: t('settings.import_title')
+    });
+    if (!confirmed) {
+      input.value = '';
+      return;
+    }
     importing = true;
     try {
       const json = await file.text();
@@ -318,7 +342,9 @@
     <div class="card p-5">
       <h2 class="font-display font-semibold text-ink mb-1">{t('settings.export_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.export_desc')}</p>
-      <button class="btn-primary" onclick={handleExport}>{t('settings.export_btn')}</button>
+      <button class="btn-primary" onclick={handleExport} disabled={exporting}>
+        {exporting ? '...' : t('settings.export_btn')}
+      </button>
     </div>
 
     <!-- Import -->

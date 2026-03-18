@@ -154,9 +154,14 @@ export default {
   'settings.sync_server_url': 'Server URL',
   'settings.sync_server_url_placeholder': 'wss://your-server.com',
   'settings.sync_webrtc_hint': 'Peer-to-peer — both devices must be online at the same time.',
+  'settings.sync_leave_confirm': 'Leave sync room?',
+  'settings.sync_leave_confirm_message': 'Your data stays on this device, but will no longer sync with other devices in this room.',
+  'settings.import_confirm': 'Import backup?',
+  'settings.import_confirm_message': 'This will merge the backup data into your current library. Existing entries may be overwritten.',
   'toast.sync_joined': 'Joined room',
   'toast.sync_left': 'Left room',
   'toast.sync_invalid_code': 'Invalid room code',
+  'toast.export_failed': 'Export failed',
 
   // Scanner
   'scanner.hint': 'Point your camera at the book\'s barcode',

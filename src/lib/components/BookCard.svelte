@@ -6,12 +6,14 @@
   let { book, onclick }: { book: Book; onclick?: () => void } = $props();
 
   let coverSrc = $state<string | null>(book.coverUrl || null);
+  let coverLoading = $state(!!book.coverUrl);
 
   onMount(async () => {
     const base64 = await getCoverBase64(book.id);
     if (base64) {
       coverSrc = base64;
     }
+    coverLoading = false;
   });
 </script>
 
@@ -22,6 +24,10 @@
   <div class="relative w-[7.5rem] h-[10.5rem] rounded-lg overflow-hidden book-cover-shadow transition-all duration-300 flex-shrink-0 bg-warm-100">
     {#if coverSrc}
       <img src={coverSrc} alt={book.title} class="w-full h-full object-cover" />
+    {:else if coverLoading}
+      <div class="w-full h-full flex items-center justify-center bg-warm-100">
+        <div class="w-6 h-0.5 bg-warm-200 rounded-full animate-pulse"></div>
+      </div>
     {:else}
       <div class="w-full h-full flex flex-col items-center justify-center px-3 text-center bg-gradient-to-br from-warm-100 to-warm-200">
         <span class="font-display text-xs font-semibold text-ink-light leading-snug">{book.title}</span>
