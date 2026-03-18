@@ -205,6 +205,8 @@ export default {
   'stats.recommendations.based_on': 'Karena kamu membaca {title}',
   'stats.recommendations.loading': 'Mencari rekomendasi...',
   'stats.recommendations.none': 'Tambahkan buku untuk mendapatkan rekomendasi',
+  'stats.year.label': 'Tahun',
+  'stats.year.all': 'Semua Tahun',
 
   // Shelves
   'shelves.title': 'Rak Buku',

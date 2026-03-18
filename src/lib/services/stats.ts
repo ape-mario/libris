@@ -14,19 +14,59 @@ export interface ReadingStats {
 	totalPages: number;
 }
 
-export function getReadingStats(userId: string): ReadingStats {
+function getReadDate(ud: UserBookData, userBooks: Book[]): Date | null {
+	if (ud.dateRead) return new Date(ud.dateRead);
+	const book = userBooks.find((b) => b.id === ud.bookId);
+	return book ? new Date(book.dateAdded) : null;
+}
+
+function matchesYear(ud: UserBookData, userBooks: Book[], year?: number): boolean {
+	if (!year) return true;
+	if (ud.status !== 'read') return true; // non-read items don't have a read date to filter
+	const readDate = getReadDate(ud, userBooks);
+	return readDate ? readDate.getFullYear() === year : false;
+}
+
+export function getAvailableYears(userId: string): number[] {
+	const allBooks = q.getAll<Book>('books');
+	const userData = q.filter<UserBookData>('userBookData', (d) => d.userId === userId);
+	const userBookIds = new Set(userData.map((d) => d.bookId));
+	const userBooks = allBooks.filter((b) => userBookIds.has(b.id));
+
+	const years = new Set<number>();
+	for (const ud of userData) {
+		if (ud.status === 'read') {
+			const readDate = getReadDate(ud, userBooks);
+			if (readDate) years.add(readDate.getFullYear());
+		}
+	}
+	return [...years].sort((a, b) => b - a);
+}
+
+export function getReadingStats(userId: string, year?: number): ReadingStats {
 	const allBooks = q.getAll<Book>('books');
 	const userData = q.filter<UserBookData>('userBookData', (d) => d.userId === userId);
 
 	const userBookIds = new Set(userData.map((d) => d.bookId));
 	const userBooks = allBooks.filter((b) => userBookIds.has(b.id));
 
-	const totalRead = userData.filter((d) => d.status === 'read').length;
-	const totalReading = userData.filter((d) => d.status === 'reading').length;
-	const totalDnf = userData.filter((d) => d.status === 'dnf').length;
-	const totalWishlist = userData.filter((d) => d.isWishlist).length;
+	// For year filter: filter read books by read date, keep non-read as-is for counts
+	const filteredData = year
+		? userData.filter((d) => {
+			if (d.status !== 'read') return true;
+			return matchesYear(d, userBooks, year);
+		})
+		: userData;
 
-	const rated = userData.filter((d) => d.rating && d.rating > 0);
+	const filteredBookIds = new Set(filteredData.map((d) => d.bookId));
+	const filteredBooks = userBooks.filter((b) => filteredBookIds.has(b.id));
+
+	const totalRead = filteredData.filter((d) => d.status === 'read').length;
+	const totalReading = year ? 0 : filteredData.filter((d) => d.status === 'reading').length;
+	const totalDnf = year ? 0 : filteredData.filter((d) => d.status === 'dnf').length;
+	const totalWishlist = year ? 0 : filteredData.filter((d) => d.isWishlist).length;
+
+	const rated = filteredData.filter((d) => d.status === 'read' && d.rating && d.rating > 0);
 	const averageRating =
 		rated.length > 0 ? rated.reduce((sum, d) => sum + (d.rating || 0), 0) / rated.length : 0;
 
@@ -37,21 +77,18 @@ export function getReadingStats(userId: string): ReadingStats {
 		}
 	}
 
+	// Books per month: if year specified, show Jan-Dec of that year; otherwise last 12 months
 	const now = new Date();
 	const booksPerMonth: { month: string; count: number }[] = [];
 	for (let i = 11; i >= 0; i--) {
-		const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+		const d = year
+			? new Date(year, 11 - i, 1)
+			: new Date(now.getFullYear(), now.getMonth() - i, 1);
 		const label = d.toLocaleDateString('en', { month: 'short', year: '2-digit' });
 
-		// Count books marked as read in this month (by dateRead, fallback to dateAdded)
-		const count = userData.filter((ud) => {
+		const count = filteredData.filter((ud) => {
 			if (ud.status !== 'read') return false;
-			const readDate = ud.dateRead
-				? new Date(ud.dateRead)
-				: (() => {
-					const book = userBooks.find((b) => b.id === ud.bookId);
-					return book ? new Date(book.dateAdded) : null;
-				})();
+			const readDate = getReadDate(ud, userBooks);
 			if (!readDate) return false;
 			return readDate.getFullYear() === d.getFullYear() && readDate.getMonth() === d.getMonth();
 		}).length;
@@ -60,7 +97,7 @@ export function getReadingStats(userId: string): ReadingStats {
 	}
 
 	const genreMap = new Map<string, number>();
-	for (const book of userBooks) {
+	for (const book of filteredBooks) {
 		for (const cat of book.categories || []) {
 			genreMap.set(cat, (genreMap.get(cat) || 0) + 1);
 		}
@@ -71,7 +108,7 @@ export function getReadingStats(userId: string): ReadingStats {
 		.slice(0, 8);
 
 	const authorMap = new Map<string, number>();
-	for (const book of userBooks) {
+	for (const book of filteredBooks) {
 		for (const author of book.authors || []) {
 			authorMap.set(author, (authorMap.get(author) || 0) + 1);
 		}
@@ -81,12 +118,12 @@ export function getReadingStats(userId: string): ReadingStats {
 		.sort((a, b) => b.count - a.count)
 		.slice(0, 6);
 
-	const totalPages = userData
+	const totalPages = filteredData
 		.filter((d) => d.status === 'read' && d.totalPages)
 		.reduce((sum, d) => sum + (d.totalPages || 0), 0);
 
 	return {
-		totalBooks: userBooks.length,
+		totalBooks: year ? totalRead : filteredBooks.length,
 		totalRead,
 		totalReading,
 		totalDnf,

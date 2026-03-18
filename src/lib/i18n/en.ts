@@ -205,6 +205,8 @@ export default {
   'stats.recommendations.based_on': 'Because you read {title}',
   'stats.recommendations.loading': 'Finding recommendations...',
   'stats.recommendations.none': 'Add more books to get recommendations',
+  'stats.year.label': 'Year',
+  'stats.year.all': 'All Time',
 
   // Shelves
   'shelves.title': 'Shelves',

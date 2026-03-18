@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { getCurrentUser } from '$lib/stores/user.svelte';
-  import { getReadingStats, type ReadingStats } from '$lib/services/stats';
+  import { getReadingStats, getAvailableYears, type ReadingStats } from '$lib/services/stats';
   import { getGoal, setGoal, getBooksReadThisYear } from '$lib/services/goals';
   import { getRecommendations, type Recommendation } from '$lib/services/recommendations';
   import { t } from '$lib/i18n/index.svelte';
@@ -9,6 +9,13 @@
   let user = $derived(getCurrentUser());
   let stats = $state<ReadingStats | null>(null);
   let loading = $state(true);
+
+  // Year filter
+  const currentYear = new Date().getFullYear();
+  let availableYears = $state<number[]>([]);
+  let selectedYear = $state<number>(currentYear);
+  let isAllTime = $derived(selectedYear === 0);
+  let isCurrentYear = $derived(selectedYear === currentYear);
 
   // Reading goal
   let goalTarget = $state('');
@@ -20,17 +27,73 @@
   let recs = $state<Recommendation[]>([]);
   let loadingRecs = $state(false);
 
-  onMount(() => {
-    if (user) {
-      stats = getReadingStats(user.id);
+  function loadStats() {
+    if (!user) return;
+    const year = isAllTime ? undefined : selectedYear;
+    stats = getReadingStats(user.id, year);
 
-      // Load goal
-      const goal = getGoal(user.id);
-      if (goal) {
-        goalTarget = goal.target.toString();
-        hasGoal = true;
+    // Load goal for selected year
+    const goalYear = isAllTime ? currentYear : selectedYear;
+    const goal = getGoal(user.id, goalYear);
+    if (goal) {
+      goalTarget = goal.target.toString();
+      hasGoal = true;
+    } else {
+      goalTarget = '';
+      hasGoal = false;
+    }
+    editingGoal = false;
+    goalRead = isAllTime
+      ? getBooksReadThisYear(user.id)
+      : (stats?.totalRead ?? 0);
+  }
+
+  // Custom dropdown
+  let dropdownOpen = $state(false);
+  let dropdownRef = $state<HTMLDivElement | null>(null);
+
+  function selectYear(year: number) {
+    selectedYear = year;
+    dropdownOpen = false;
+    loadStats();
+  }
+
+  function handleDropdownKeydown(e: KeyboardEvent) {
+    if (!dropdownOpen) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        dropdownOpen = true;
       }
-      goalRead = getBooksReadThisYear(user.id);
+      return;
+    }
+    const items = [0, ...availableYears];
+    const idx = items.indexOf(selectedYear);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (idx < items.length - 1) selectYear(items[idx + 1]);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (idx > 0) selectYear(items[idx - 1]);
+    } else if (e.key === 'Escape') {
+      dropdownOpen = false;
+    }
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    if (dropdownRef && !dropdownRef.contains(e.target as Node)) {
+      dropdownOpen = false;
+    }
+  }
+
+  onMount(() => {
+    document.addEventListener('click', handleClickOutside);
+    if (user) {
+      availableYears = getAvailableYears(user.id);
+      // Ensure current year is in the list
+      if (!availableYears.includes(currentYear)) {
+        availableYears = [currentYear, ...availableYears];
+      }
+      loadStats();
 
       // Load recommendations in background (still async - external API)
       loadingRecs = true;
@@ -42,11 +105,17 @@
     loading = false;
   });
 
+  onDestroy(() => {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('click', handleClickOutside);
+    }
+  });
+
   function saveGoal() {
     if (!user) return;
     const target = parseInt(goalTarget);
     if (!target || target < 1) return;
-    setGoal(user.id, target);
+    setGoal(user.id, target, isAllTime ? currentYear : selectedYear);
     hasGoal = true;
     editingGoal = false;
   }
@@ -73,7 +142,48 @@
 </script>
 
 <div class="max-w-lg mx-auto animate-fade-up">
-  <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('stats.title')}</h1>
+  <div class="flex items-end justify-between mb-6">
+    <h1 class="font-display text-2xl font-bold text-ink tracking-tight">{t('stats.title')}</h1>
+    {#if availableYears.length > 0}
+      <div class="relative" bind:this={dropdownRef}>
+        <button
+          class="year-dropdown-trigger"
+          onclick={() => dropdownOpen = !dropdownOpen}
+          onkeydown={handleDropdownKeydown}
+          aria-haspopup="listbox"
+          aria-expanded={dropdownOpen}
+        >
+          <span class="font-display font-semibold">{isAllTime ? t('stats.year.all') : selectedYear}</span>
+          <svg class="year-dropdown-chevron" class:rotate-180={dropdownOpen} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        {#if dropdownOpen}
+          <ul class="year-dropdown-menu animate-scale-in" role="listbox">
+            <li>
+              <button
+                class="year-dropdown-item"
+                class:year-dropdown-item-active={isAllTime}
+                onclick={() => selectYear(0)}
+                role="option"
+                aria-selected={isAllTime}
+              >{t('stats.year.all')}</button>
+            </li>
+            <li class="year-dropdown-divider"></li>
+            {#each availableYears as year}
+              <li>
+                <button
+                  class="year-dropdown-item"
+                  class:year-dropdown-item-active={selectedYear === year}
+                  onclick={() => selectYear(year)}
+                  role="option"
+                  aria-selected={selectedYear === year}
+                >{year}</button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
+    {/if}
+  </div>
 
   {#if loading}
     <div class="flex justify-center py-16">
@@ -96,9 +206,11 @@
             <span class="font-display text-lg font-bold text-ink">
               {t('stats.goal.progress', { read: goalRead.toString(), goal: goalTarget })}
             </span>
-            <button class="text-xs text-ink-muted hover:text-accent transition-colors" aria-label={t('stats.goal.edit')} onclick={() => editingGoal = true}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            </button>
+            {#if isCurrentYear || isAllTime}
+              <button class="text-xs text-ink-muted hover:text-accent transition-colors" aria-label={t('stats.goal.edit')} onclick={() => editingGoal = true}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </button>
+            {/if}
           </div>
           <div class="h-3 rounded-full bg-warm-100 overflow-hidden mb-2">
             <div
@@ -113,6 +225,8 @@
             </span>
           </div>
         </div>
+      {:else if !hasGoal && !isCurrentYear && !isAllTime}
+        <!-- No goal set for past year — show nothing -->
       {:else}
         <div class="card p-4">
           <form class="flex gap-3 items-end" onsubmit={(e) => { e.preventDefault(); saveGoal(); }}>
@@ -263,3 +377,82 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .year-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    border: 1.5px solid var(--color-warm-200);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .year-dropdown-trigger:hover {
+    border-color: var(--color-warm-400);
+  }
+  .year-dropdown-trigger:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+  }
+  .year-dropdown-chevron {
+    color: var(--color-ink-muted);
+    transition: transform 0.2s ease;
+  }
+  .year-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.375rem);
+    min-width: 9rem;
+    padding: 0.375rem;
+    border-radius: 0.875rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-warm-100);
+    box-shadow:
+      0 4px 16px rgba(44, 24, 16, 0.1),
+      0 1px 3px rgba(44, 24, 16, 0.06);
+    z-index: 50;
+    list-style: none;
+    transform-origin: top right;
+  }
+  :global(html.dark) .year-dropdown-menu {
+    box-shadow:
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .year-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-ink-light);
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    background: none;
+  }
+  .year-dropdown-item:hover {
+    background: var(--color-warm-100);
+    color: var(--color-ink);
+  }
+  .year-dropdown-item-active {
+    background: var(--color-ink);
+    color: var(--color-cream);
+  }
+  .year-dropdown-item-active:hover {
+    background: var(--color-ink-light);
+    color: var(--color-cream);
+  }
+  .year-dropdown-divider {
+    height: 1px;
+    margin: 0.25rem 0.5rem;
+    background: var(--color-warm-100);
+  }
+</style>
