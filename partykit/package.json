@@ -1,0 +1,12 @@
+{
+  "name": "libris-sync-server",
+  "private": true,
+  "scripts": {
+    "dev": "npx partykit dev",
+    "deploy": "npx partykit deploy"
+  },
+  "dependencies": {
+    "partykit": "^0.0.111",
+    "y-partykit": "^0.0.25"
+  }
+}

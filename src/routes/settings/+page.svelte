@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
   import { exportData, importData } from '$lib/services/backup';
   import { importGoodreadsCSV } from '$lib/services/goodreads';
   import { showToast } from '$lib/stores/toast.svelte';
@@ -6,6 +7,16 @@
   import { t } from '$lib/i18n/index.svelte';
   import { getLocale, setLocale, type Locale } from '$lib/i18n/index.svelte';
   import { getTheme, setTheme, type Theme } from '$lib/stores/theme.svelte';
+  import { isValidRoomCode, formatRoomCode, getRoomLink } from '$lib/sync/room';
+  import {
+    getSyncStatus,
+    getRoomCode,
+    onSyncStatusChange,
+    createRoom,
+    joinRoom,
+    leaveRoom
+  } from '$lib/sync/manager';
+  import type { SyncStatus } from '$lib/sync/provider';
 
   let importing = $state(false);
   let currentTheme = $derived(getTheme());
@@ -13,8 +24,70 @@
   let locale = $derived(getLocale());
   let user = $derived(getCurrentUser());
 
+  // Sync state
+  let syncStatus = $state<SyncStatus>('disconnected');
+  let roomCode = $state<string | null>(null);
+  let joinInput = $state('');
+  let showJoinInput = $state(false);
+  let unsubSync: (() => void) | null = null;
+
+  onMount(() => {
+    syncStatus = getSyncStatus();
+    roomCode = getRoomCode();
+    unsubSync = onSyncStatusChange((status) => {
+      syncStatus = status;
+    });
+
+    // Check for pending join from /join/[code] route
+    const pending = sessionStorage.getItem('libris_pending_join');
+    if (pending) {
+      sessionStorage.removeItem('libris_pending_join');
+      handleJoinRoom(pending);
+    }
+  });
+
+  onDestroy(() => {
+    unsubSync?.();
+  });
+
   function handleLocale(newLocale: Locale) {
     setLocale(newLocale);
+  }
+
+  function handleCreateRoom() {
+    const code = createRoom();
+    roomCode = code;
+    showToast(t('toast.sync_joined'), 'success');
+  }
+
+  function handleJoinRoom(code?: string) {
+    const input = code || formatRoomCode(joinInput);
+    if (!isValidRoomCode(input)) {
+      showToast(t('toast.sync_invalid_code'), 'error');
+      return;
+    }
+    joinRoom(input);
+    roomCode = input;
+    joinInput = '';
+    showJoinInput = false;
+    showToast(t('toast.sync_joined'), 'success');
+  }
+
+  function handleLeaveRoom() {
+    leaveRoom();
+    roomCode = null;
+    showToast(t('toast.sync_left'), 'info');
+  }
+
+  async function handleCopyLink() {
+    if (!roomCode) return;
+    try {
+      await navigator.clipboard.writeText(getRoomLink(roomCode));
+      showToast(t('settings.sync_copied'), 'success');
+    } catch {
+      // Fallback
+      showToast(getRoomLink(roomCode), 'info');
+    }
   }
 
   async function handleExport() {
@@ -59,6 +132,23 @@
     importingGoodreads = false;
     input.value = '';
   }
+
+  const statusColors: Record<SyncStatus, string> = {
+    connected: 'bg-sage',
+    connecting: 'bg-gold animate-pulse',
+    disconnected: 'bg-warm-300',
+    offline: 'bg-warm-400'
+  };
+
+  function statusLabel(status: SyncStatus): string {
+    const map: Record<SyncStatus, string> = {
+      connected: t('settings.sync_connected'),
+      connecting: t('settings.sync_connecting'),
+      disconnected: t('settings.sync_disconnected'),
+      offline: t('settings.sync_offline')
+    };
+    return map[status];
+  }
 </script>
 
 <div class="max-w-lg mx-auto animate-fade-up">
@@ -100,6 +190,68 @@
           >{opt.label}</button>
         {/each}
       </div>
+    </div>
+
+    <!-- Device Sync -->
+    <div class="card p-5">
+      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.sync_title')}</h2>
+      <p class="text-sm text-ink-muted mb-4">{t('settings.sync_desc')}</p>
+
+      {#if roomCode}
+        <!-- Connected to a room -->
+        <div class="flex flex-col gap-3">
+          <!-- Status -->
+          <div class="flex items-center gap-2.5">
+            <div class="w-2 h-2 rounded-full {statusColors[syncStatus]}"></div>
+            <span class="text-sm text-ink">{statusLabel(syncStatus)}</span>
+          </div>
+
+          <!-- Room code display -->
+          <div class="flex items-center gap-3 bg-warm-50 rounded-xl p-3">
+            <div class="flex-1">
+              <span class="text-xs text-ink-muted uppercase tracking-wider font-semibold">{t('settings.sync_room_code')}</span>
+              <p class="font-mono text-lg font-bold text-ink tracking-widest mt-0.5">{roomCode}</p>
+            </div>
+            <button
+              class="btn-secondary !py-1.5 !px-3 !text-xs"
+              onclick={handleCopyLink}
+            >{t('settings.sync_share_link')}</button>
+          </div>
+
+          <!-- Leave room -->
+          <button
+            class="text-xs text-warm-400 hover:text-berry transition-colors self-start mt-1"
+            onclick={handleLeaveRoom}
+          >{t('settings.sync_leave_room')}</button>
+        </div>
+      {:else}
+        <!-- Not in a room -->
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-2">
+            <button class="btn-primary flex-1" onclick={handleCreateRoom}>
+              {t('settings.sync_create_room')}
+            </button>
+            <button class="btn-secondary flex-1" onclick={() => showJoinInput = !showJoinInput}>
+              {t('settings.sync_join_room')}
+            </button>
+          </div>
+
+          {#if showJoinInput}
+            <form class="flex gap-2 animate-fade-up" onsubmit={(e) => { e.preventDefault(); handleJoinRoom(); }}>
+              <input
+                type="text"
+                bind:value={joinInput}
+                placeholder={t('settings.sync_room_code_placeholder')}
+                class="input-field flex-1 font-mono text-center tracking-widest uppercase"
+                maxlength="9"
+              />
+              <button type="submit" class="btn-primary"
+                disabled={joinInput.replace(/-/g, '').length !== 8}
+              >{t('settings.sync_join_room')}</button>
+            </form>
+          {/if}
+        </div>
+      {/if}
     </div>
 
     <!-- Goodreads Import -->

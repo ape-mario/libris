@@ -1,7 +1,10 @@
 import type * as Y from 'yjs';
 import type { SyncProvider, SyncStatus } from './provider';
 
-const PARTYKIT_HOST = 'libris-sync.username.partykit.dev'; // TODO: replace with actual PartyKit project URL
+// Set via VITE_PARTYKIT_HOST env var, or defaults to localhost for dev
+const PARTYKIT_HOST =
+	(typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_PARTYKIT_HOST) ||
+	'localhost:1999';
 
 export function createPartyKitProvider(): SyncProvider {
 	let provider: any = null;

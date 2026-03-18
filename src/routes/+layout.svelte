@@ -46,6 +46,14 @@
     restoreUser();
     loaded = true;
     setTimeout(() => cacheAllCovers(), 3000);
+
+    // Auto-reconnect to sync room if previously joined
+    try {
+      const { autoReconnect } = await import('$lib/sync/manager');
+      autoReconnect();
+    } catch (e) {
+      console.warn('[Libris] Sync auto-reconnect failed:', e);
+    }
   });
 </script>
 
