@@ -12,6 +12,7 @@
   import { cacheAllCovers } from '$lib/services/coverCache';
   import { initTheme } from '$lib/stores/theme.svelte';
   import { initDoc } from '$lib/db';
+  import { page } from '$app/state';
 
   let { children } = $props();
   let loaded = $state(false);
@@ -55,17 +56,46 @@
       console.warn('[Libris] Migration check failed:', e);
     }
 
+    // Handle /join/[code] URL — must happen before restoreUser so sync
+    // starts before ProfilePicker renders on a fresh device
+    let joinedFromLink = false;
+    try {
+      const { joinRoom, autoReconnect } = await import('$lib/sync/manager');
+      const { isValidRoomCode, formatRoomCode } = await import('$lib/sync/room');
+      const { isDocEmpty } = await import('$lib/db');
+
+      const joinMatch = page.url.pathname.match(/\/join\/([A-Za-z2-9-]+)$/);
+      if (joinMatch) {
+        const code = formatRoomCode(joinMatch[1]);
+        if (isValidRoomCode(code)) {
+          joinRoom(code);
+          // On a fresh device, wait for initial sync from peer (up to 5s)
+          if (isDocEmpty()) {
+            joinedFromLink = true;
+            const { doc } = await import('$lib/db');
+            await new Promise<void>(resolve => {
+              const timeout = setTimeout(resolve, 5000);
+              const handler = () => {
+                if (!isDocEmpty()) {
+                  clearTimeout(timeout);
+                  doc.off('update', handler);
+                  resolve();
+                }
+              };
+              doc.on('update', handler);
+            });
+          }
+        }
+      } else {
+        autoReconnect();
+      }
+    } catch (e) {
+      console.warn('[Libris] Sync setup failed:', e);
+    }
+
     restoreUser();
     loaded = true;
     setTimeout(() => cacheAllCovers(), 3000);
-
-    // Auto-reconnect to sync room if previously joined
-    try {
-      const { autoReconnect } = await import('$lib/sync/manager');
-      autoReconnect();
-    } catch (e) {
-      console.warn('[Libris] Sync auto-reconnect failed:', e);
-    }
   });
 </script>
 
