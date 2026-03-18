@@ -19,7 +19,7 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - **Reading progress** — Track current page for books you're reading
 - **Export/Import** — Backup and restore your library as JSON
 - **Goodreads import** — Migrate your existing library from a Goodreads CSV export
-- **Cloud sync** — Optional sync across devices via CouchDB
+- **Device sync** — Real-time sync across devices using room codes and Yjs CRDTs
 - **Offline-first** — Works fully offline with IndexedDB storage and cover caching
 - **Bilingual** — English and Bahasa Indonesia
 
@@ -27,7 +27,8 @@ A personal book collection manager built as a Progressive Web App. Track your re
 
 - [SvelteKit](https://svelte.dev) (Svelte 5 with runes)
 - [Tailwind CSS](https://tailwindcss.com) v4
-- [Dexie.js](https://dexie.org) (IndexedDB wrapper)
+- [Yjs](https://yjs.dev) (CRDT-based data layer with y-indexeddb persistence)
+- [PartyKit](https://partykit.io) / [Hocuspocus](https://tiptap.dev/hocuspocus) (WebSocket sync providers)
 - [QuaggaJS](https://github.com/ericblade/quagga2) (barcode scanning)
 - [Vite PWA](https://vite-pwa-org.netlify.app) (service worker & manifest)
 - Static adapter (deploy anywhere)
@@ -48,7 +49,6 @@ npm run dev
 | `npm run preview` | Preview production build |
 | `npm run check` | Type-check with svelte-check |
 | `npm run test` | Run unit tests (Vitest) |
-| `npm run test:e2e` | Run end-to-end tests (Playwright) |
 
 ## Project Structure
 
@@ -56,20 +56,26 @@ npm run dev
 src/
 ├── lib/
 │   ├── components/    # Reusable UI components
-│   ├── db/            # Dexie database schema & types
+│   ├── db/            # Yjs Y.Doc, query helpers, reactive stores, migration
 │   ├── i18n/          # Translations (en, id)
-│   ├── services/      # Business logic (books, stats, sync, etc.)
-│   └── stores/        # Svelte stores (user, theme, toast, dialog)
+│   ├── services/      # Business logic (books, stats, backup, etc.)
+│   ├── stores/        # Svelte stores (user, theme, toast, dialog)
+│   └── sync/          # Room codes, provider interface, PartyKit/Hocuspocus
 ├── routes/
 │   ├── add/           # Add book (search, manual, scan)
 │   ├── book/[id]/     # Book detail & editing
 │   ├── browse/        # Browse by category, series, author
+│   ├── join/[code]/   # Shareable room code join link
 │   ├── mine/          # Per-user reading status
 │   ├── settings/      # Settings, backup, sync
 │   ├── shelves/       # Custom shelves
 │   └── stats/         # Reading statistics & goals
 └── static/            # PWA icons & assets
 ```
+
+## Sync
+
+Data is stored locally in IndexedDB via Yjs CRDTs. Sync is opt-in — create or join a room with a shareable code (format: `XXXX-XXXX`) to sync across devices in real-time. Supports PartyKit (managed) or Hocuspocus (self-hosted) as WebSocket providers.
 
 ## License
 
