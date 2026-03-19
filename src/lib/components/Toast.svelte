@@ -17,7 +17,7 @@
 </script>
 
 {#if toasts.length}
-  <div class="fixed bottom-24 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4">
+  <div class="fixed top-14 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4">
     {#each toasts as toast (toast.id)}
       <div
         class="pointer-events-auto max-w-sm w-full rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg {colorMap[toast.type]} {toast.leaving ? 'toast-leave' : 'toast-enter'}"
@@ -37,7 +37,7 @@
     animation: toastOut 0.3s ease-in both;
   }
   @keyframes toastIn {
-    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    from { opacity: 0; transform: translateY(-16px) scale(0.95); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes toastOut {

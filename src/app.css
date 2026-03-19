@@ -121,18 +121,22 @@ main {
     4px 4px 12px rgba(44, 24, 16, 0.2),
     10px 10px 30px rgba(44, 24, 16, 0.1);
 }
-/* BookCard hover shadow — custom class since Tailwind can't prefix custom shadows */
+/* BookCard hover shadow — 3D tilt effect */
 .book-cover-shadow {
   box-shadow:
     2px 2px 8px rgba(44, 24, 16, 0.15),
     6px 6px 20px rgba(44, 24, 16, 0.08);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
 }
 .group:hover .book-cover-shadow {
   box-shadow:
-    4px 4px 12px rgba(44, 24, 16, 0.2),
-    10px 10px 30px rgba(44, 24, 16, 0.1);
-  transform: translateY(-4px);
+    6px 8px 16px rgba(44, 24, 16, 0.22),
+    12px 14px 32px rgba(44, 24, 16, 0.12);
+  transform: translateY(-3px) rotateY(-3deg) rotateX(2deg);
+}
+.group:active .book-cover-shadow {
+  transform: scale(0.97);
+  transition-duration: 0.1s;
 }
 html.dark .book-shadow {
   box-shadow:
@@ -151,8 +155,9 @@ html.dark .book-cover-shadow {
 }
 html.dark .group:hover .book-cover-shadow {
   box-shadow:
-    4px 4px 12px rgba(0, 0, 0, 0.4),
-    10px 10px 30px rgba(0, 0, 0, 0.25);
+    6px 8px 16px rgba(0, 0, 0, 0.4),
+    12px 14px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px) rotateY(-3deg) rotateX(2deg);
 }
 
 /* Stagger animations */
@@ -176,6 +181,17 @@ html.dark .group:hover .book-cover-shadow {
 }
 .animate-scale-in {
   animation: scaleIn 0.3s ease-out both;
+}
+
+/* Active press feedback — native tap feel */
+.btn-primary:active, .btn-secondary:active, .btn-danger:active {
+  transform: scale(0.97);
+}
+.tab-pill:active {
+  transform: scale(0.95);
+}
+.card:active {
+  transform: scale(0.985);
 }
 
 /* Pill tabs */

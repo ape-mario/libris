@@ -125,5 +125,6 @@
   .book-card {
     content-visibility: auto;
     contain-intrinsic-size: 7.5rem 13rem;
+    perspective: 600px;
   }
 </style>

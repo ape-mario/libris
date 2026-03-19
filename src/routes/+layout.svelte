@@ -24,6 +24,7 @@
   let deferredPrompt = $state<Event | null>(null);
   let showInstallBanner = $state(false);
   let pwaHandler: ((e: Event) => void) | null = null;
+  let showScrollTop = $state(false);
 
   function dismissInstall() {
     showInstallBanner = false;
@@ -46,6 +47,11 @@
 
   onMount(async () => {
     initTheme();
+
+    // Scroll-to-top button visibility
+    window.addEventListener('scroll', () => {
+      showScrollTop = window.scrollY > 600;
+    }, { passive: true });
 
     // PWA install prompt
     const dismissed = localStorage.getItem('libris_pwa_dismissed');
@@ -150,6 +156,15 @@
     {@render children()}
   </main>
   <BottomNav />
+  {#if showScrollTop}
+    <button
+      class="fixed bottom-20 right-4 z-40 w-10 h-10 rounded-full bg-surface border border-warm-100 shadow-lg flex items-center justify-center text-ink-muted hover:text-accent transition-all animate-scale-in"
+      onclick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      aria-label="Scroll to top"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+  {/if}
 {/if}
 
 <Toast />

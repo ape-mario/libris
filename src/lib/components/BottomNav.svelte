@@ -23,7 +23,7 @@
     {#each tabs as tab}
       <a
         href={tab.href}
-        class="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all {isActive(tab.href) ? 'text-accent' : 'text-ink-muted hover:text-ink-light'}"
+        class="nav-item flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all {isActive(tab.href) ? 'text-accent nav-active' : 'text-ink-muted hover:text-ink-light'}"
       >
         <span class="transition-transform {isActive(tab.href) ? 'scale-110' : ''}">{@html tab.icon}</span>
         <span class="text-[9px] font-semibold tracking-wide uppercase">{tab.label}</span>
@@ -31,3 +31,25 @@
     {/each}
   </div>
 </nav>
+
+<style>
+  .nav-item {
+    position: relative;
+  }
+  .nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    animation: dotIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes dotIn {
+    from { transform: translateX(-50%) scale(0); }
+    to { transform: translateX(-50%) scale(1); }
+  }
+</style>
