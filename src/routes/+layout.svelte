@@ -34,8 +34,8 @@
   async function handleInstall() {
     if (!deferredPrompt) return;
     (deferredPrompt as any).prompt();
-    const result = await (deferredPrompt as any).userChoice;
-    if (result.outcome === 'accepted') dismissInstall();
+    await (deferredPrompt as any).userChoice;
+    dismissInstall(); // prompt can only be used once regardless of outcome
   }
 
   $effect(() => {

@@ -4,6 +4,7 @@
   import { getCoverBase64 } from '$lib/services/coverCache';
   import { getCurrentUser } from '$lib/stores/user.svelte';
   import { getUserBookData, setUserBookData } from '$lib/services/userbooks';
+  import { t } from '$lib/i18n/index.svelte';
 
   let { book, onclick }: { book: Book; onclick?: () => void } = $props();
 
@@ -103,10 +104,10 @@
   {#if showQuickMenu}
     <div class="quick-menu absolute top-0 left-0 right-0 z-20 card p-1.5 shadow-lg animate-scale-in" onclick={(e: MouseEvent) => e.stopPropagation()}>
       {#each [
-        { status: 'read' as const, label: '✓ Read', dot: 'bg-sage' },
-        { status: 'reading' as const, label: '◉ Reading', dot: 'bg-accent' },
-        { status: 'unread' as const, label: '○ Unread', dot: 'bg-warm-300' },
-        { status: 'dnf' as const, label: '✕ DNF', dot: 'bg-berry' }
+        { status: 'read' as const, label: `✓ ${t('book.status_read')}`, dot: 'bg-sage' },
+        { status: 'reading' as const, label: `◉ ${t('book.status_reading')}`, dot: 'bg-accent' },
+        { status: 'unread' as const, label: `○ ${t('book.status_unread')}`, dot: 'bg-warm-300' },
+        { status: 'dnf' as const, label: `✕ ${t('book.status_dnf')}`, dot: 'bg-berry' }
       ] as opt}
         <button
           class="w-full text-left text-[10px] font-medium px-2 py-1.5 rounded-md transition-colors {currentStatus === opt.status ? 'bg-warm-100 text-ink' : 'text-ink-light hover:bg-warm-100'}"

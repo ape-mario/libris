@@ -295,7 +295,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">Rating</span>
+        <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">{t('library.filter.rating')}</span>
         <div class="flex gap-1 pb-0.5">
           {#each [1, 2, 3, 4, 5] as star}
             <button

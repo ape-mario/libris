@@ -143,13 +143,18 @@ export function createQueryHelpers(doc: Y.Doc) {
 					}
 					entry.set(key, setMap);
 				} else if (Array.isArray(value)) {
+					const items = value.map(item =>
+						item !== null && typeof item === 'object' && !(item instanceof Date)
+							? objectToYMap('', item as Record<string, unknown>)
+							: item
+					);
 					const existing = entry.get(key);
 					if (existing instanceof Y.Array) {
 						existing.delete(0, existing.length);
-						existing.push(value);
+						existing.push(items);
 					} else {
 						const yarray = new Y.Array<unknown>();
-						yarray.push(value);
+						yarray.push(items);
 						entry.set(key, yarray);
 					}
 				} else if (value === undefined) {

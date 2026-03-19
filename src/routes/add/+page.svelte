@@ -113,7 +113,8 @@
 
   function bulkAddAll() {
     let added = 0;
-    for (const item of bulkItems) {
+    for (let i = 0; i < bulkItems.length; i++) {
+      const item = bulkItems[i];
       if (item.status !== 'found' || !item.result) continue;
       const r = item.result;
       const book = addBook({
@@ -126,7 +127,7 @@
         categories: []
       });
       if (book) {
-        item.status = 'added';
+        bulkItems[i] = { ...item, status: 'added' };
         added++;
       }
     }

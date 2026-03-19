@@ -41,6 +41,7 @@ export default {
   'library.filter': 'Kategori',
   'library.filter.all': 'Semua',
   'library.filter.status': 'Status',
+  'library.filter.rating': 'Rating',
   'library.showing': '{count} dari {total} buku',
   'library.select': 'Pilih',
   'library.bulk.selected': 'dipilih',

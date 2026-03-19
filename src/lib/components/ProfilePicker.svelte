@@ -47,7 +47,7 @@
     const totalBooks = q.getAll<{ id: string }>('books').length;
 
     users = allUsers.map((user) => {
-      const userData = q.filter<{ status: string }>('userBookData', (d: any) => d.userId === user.id);
+      const userData = q.filter<{ userId: string; status: string }>('userBookData', (d) => d.userId === user.id);
       const readCount = userData.filter((d) => d.status === 'read').length;
       return { ...user, bookCount: totalBooks, readCount };
     });

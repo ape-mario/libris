@@ -41,6 +41,7 @@ export default {
   'library.filter': 'Category',
   'library.filter.all': 'All',
   'library.filter.status': 'Status',
+  'library.filter.rating': 'Rating',
   'library.showing': '{count} of {total} books',
   'library.select': 'Select',
   'library.bulk.selected': 'selected',
