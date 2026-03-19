@@ -105,7 +105,6 @@
         loadingRecs = false;
       }).catch(() => { loadingRecs = false; });
 
-      let statsSyncTimer: ReturnType<typeof setTimeout> | null = null;
       const debouncedLoadStats = () => {
         if (statsSyncTimer) clearTimeout(statsSyncTimer);
         statsSyncTimer = setTimeout(() => loadStats(), 300);
@@ -115,11 +114,14 @@
     loading = false;
   });
 
+  let statsSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
   onDestroy(() => {
     if (typeof document !== 'undefined') {
       document.removeEventListener('click', handleClickOutside);
     }
     unsubStats.forEach(f => f());
+    if (statsSyncTimer) clearTimeout(statsSyncTimer);
   });
 
   function saveGoal() {

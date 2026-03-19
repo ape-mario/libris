@@ -46,16 +46,17 @@
     }));
   }
 
+  let browseSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
   onMount(() => {
     loadBrowseData();
-    let browseSyncTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedLoad = () => {
       if (browseSyncTimer) clearTimeout(browseSyncTimer);
       browseSyncTimer = setTimeout(() => loadBrowseData(), 300);
     };
     unsubBrowse = [q.observe('books', debouncedLoad), q.observe('series', debouncedLoad)];
   });
-  onDestroy(() => unsubBrowse.forEach(f => f()));
+  onDestroy(() => { unsubBrowse.forEach(f => f()); if (browseSyncTimer) clearTimeout(browseSyncTimer); });
 </script>
 
 <div class="animate-fade-up">

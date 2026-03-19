@@ -2,6 +2,7 @@ export default {
   // App
   'app.name': 'Libris',
   'app.loading': 'Memuat...',
+  'app.reload': 'Muat Ulang',
 
   // Profile picker
   'profile.title': 'Libris',
@@ -100,6 +101,8 @@ export default {
   'add.bulk.error': 'Gagal (offline?)',
   'add.bulk.complete': 'Semua buku berhasil ditambahkan!',
   'add.bulk.go_library': 'Lihat koleksi →',
+  'add.error_storage_full': 'Penyimpanan penuh. Coba ekspor dan hapus data lama.',
+  'add.error_save_failed': 'Gagal menyimpan buku.',
   'add.save': 'Tambah Buku',
   'add.saving': 'Menyimpan...',
   'add.error_title': 'Judul wajib diisi',

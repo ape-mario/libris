@@ -2,6 +2,7 @@ export default {
   // App
   'app.name': 'Libris',
   'app.loading': 'Loading...',
+  'app.reload': 'Reload',
 
   // Profile picker
   'profile.title': 'Libris',
@@ -100,6 +101,8 @@ export default {
   'add.bulk.error': 'Failed (offline?)',
   'add.bulk.complete': 'All books added!',
   'add.bulk.go_library': 'Go to library →',
+  'add.error_storage_full': 'Storage full. Try exporting and clearing old data.',
+  'add.error_save_failed': 'Failed to save book.',
   'add.save': 'Add Book',
   'add.saving': 'Saving...',
   'add.error_title': 'Title is required',

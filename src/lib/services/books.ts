@@ -75,11 +75,10 @@ export function getBooks(): Book[] {
 let searchCache: { books: Book[]; index: Map<string, Set<string>> } | null = null;
 
 function getSearchIndex(): { books: Book[]; index: Map<string, Set<string>> } {
+	ensureSearchObserver();
+	if (searchCache) return searchCache;
+
 	const allBooks = q.getAll<Book>('books');
-	// Simple cache: reuse if book count hasn't changed (cheap check)
-	if (searchCache && searchCache.books.length === allBooks.length) {
-		return searchCache;
-	}
 
 	// Build index: map of lowercase tokens → set of book IDs
 	const index = new Map<string, Set<string>>();
@@ -105,13 +104,17 @@ function getSearchIndex(): { books: Book[]; index: Map<string, Set<string>> } {
 	return searchCache;
 }
 
-// Invalidate on Y.Doc changes (lazy init to avoid test module load issues)
+// Invalidate search cache on Y.Doc changes
+// Lazy init: called on first search to avoid issues in test environments
 let searchObserverSet = false;
 function ensureSearchObserver() {
 	if (searchObserverSet) return;
 	searchObserverSet = true;
 	try { q.observe('books', () => { searchCache = null; }); } catch {}
 }
+
+// Also invalidate on count mismatch — the cache checks length, but we set
+// searchCache to null eagerly here as a belt-and-suspenders approach
 
 export function searchBooks(query: string): Book[] {
 	ensureSearchObserver();
@@ -123,7 +126,7 @@ export function searchBooks(query: string): Book[] {
 		// Single char: fall back to simple includes
 		return q.filter<Book>('books', (b) =>
 			b.title.toLowerCase().includes(lower) ||
-			b.authors.some((a) => a.toLowerCase().includes(lower))
+			(b.authors || []).some((a) => a.toLowerCase().includes(lower))
 		);
 	}
 

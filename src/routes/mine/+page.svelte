@@ -26,7 +26,7 @@
     loadTab();
     unsub = [q.observe('userBookData', debouncedLoadTab), q.observe('books', debouncedLoadTab)];
   });
-  onDestroy(() => unsub.forEach(f => f()));
+  onDestroy(() => { unsub.forEach(f => f()); if (syncTimer) clearTimeout(syncTimer); });
 
   function loadTab() {
     if (!user) return;

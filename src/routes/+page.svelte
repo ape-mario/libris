@@ -96,6 +96,7 @@
   onDestroy(() => {
     unsubBooks?.();
     observer?.disconnect();
+    if (syncTimer) clearTimeout(syncTimer);
   });
 
   $effect(() => {

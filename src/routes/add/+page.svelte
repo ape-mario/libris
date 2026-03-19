@@ -233,9 +233,9 @@
       goto(`${base}/`);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-        showToast('Storage full. Try exporting and clearing old data.', 'error');
+        showToast(t('add.error_storage_full'), 'error');
       } else {
-        showToast('Failed to save book.', 'error');
+        showToast(t('add.error_save_failed'), 'error');
       }
       saving = false;
       return;

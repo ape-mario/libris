@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { getCurrentUser, restoreUser } from '$lib/stores/user.svelte';
   import ProfilePicker from '$lib/components/ProfilePicker.svelte';
   import TopBar from '$lib/components/TopBar.svelte';
@@ -23,6 +23,7 @@
   // PWA install prompt
   let deferredPrompt = $state<Event | null>(null);
   let showInstallBanner = $state(false);
+  let pwaHandler: ((e: Event) => void) | null = null;
 
   function dismissInstall() {
     showInstallBanner = false;
@@ -49,11 +50,12 @@
     // PWA install prompt
     const dismissed = localStorage.getItem('libris_pwa_dismissed');
     if (!dismissed) {
-      window.addEventListener('beforeinstallprompt', (e) => {
+      pwaHandler = (e: Event) => {
         e.preventDefault();
         deferredPrompt = e;
         showInstallBanner = true;
-      });
+      };
+      window.addEventListener('beforeinstallprompt', pwaHandler);
     }
 
     // Install global error handler
@@ -106,6 +108,10 @@
     loaded = true;
     setTimeout(() => cacheAllCovers(), 3000);
   });
+
+  onDestroy(() => {
+    if (pwaHandler) window.removeEventListener('beforeinstallprompt', pwaHandler);
+  });
 </script>
 
 {#if initError}
@@ -114,9 +120,9 @@
       <div class="w-16 h-16 rounded-2xl bg-berry/10 mx-auto mb-4 flex items-center justify-center">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-berry"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
       </div>
-      <p class="font-display text-lg text-ink font-semibold mb-2">Something went wrong</p>
+      <p class="font-display text-lg text-ink font-semibold mb-2">{t('error.generic')}</p>
       <p class="text-sm text-ink-muted mb-6">{initError}</p>
-      <button class="btn-primary" onclick={() => location.reload()}>Reload</button>
+      <button class="btn-primary" onclick={() => location.reload()}>{t('app.reload')}</button>
     </div>
   </div>
 {:else if !loaded}

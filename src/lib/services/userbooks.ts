@@ -11,7 +11,7 @@ export function setUserBookData(
 	updates: Partial<
 		Pick<
 			UserBookData,
-			'status' | 'rating' | 'notes' | 'lentTo' | 'lentDate' | 'isWishlist' | 'currentPage' | 'totalPages'
+			'status' | 'rating' | 'notes' | 'lentTo' | 'lentDate' | 'isWishlist' | 'currentPage' | 'totalPages' | 'progressHistory'
 		>
 	>
 ): UserBookData {

@@ -20,16 +20,16 @@ export async function getRecommendations(limit: number = 6): Promise<Recommendat
 	const recommendations: Recommendation[] = [];
 
 	// Pick up to 3 random books with categories to base recommendations on
-	const booksWithCats = books.filter((b) => b.categories.length > 0);
+	const booksWithCats = books.filter((b) => (b.categories || []).length > 0);
 	const seedBooks = shuffle(booksWithCats.length > 0 ? booksWithCats : books).slice(0, 3);
 
 	for (const seed of seedBooks) {
 		if (recommendations.length >= limit) break;
 
 		try {
-			const searchQuery = seed.categories[0]
+			const searchQuery = seed.categories?.[0]
 				? `subject:${seed.categories[0]}`
-				: `author:${seed.authors[0] || ''}`;
+				: `author:${(seed.authors || [])[0] || ''}`;
 
 			const res = await fetch(
 				`https://openlibrary.org/search.json?q=${encodeURIComponent(searchQuery)}&limit=20&fields=title,author_name,isbn,cover_i`

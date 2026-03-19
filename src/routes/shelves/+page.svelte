@@ -28,7 +28,7 @@
     loadShelves();
     unsub = [q.observe('shelves', debouncedLoadShelves), q.observe('books', debouncedLoadShelves)];
   });
-  onDestroy(() => unsub.forEach(f => f()));
+  onDestroy(() => { unsub.forEach(f => f()); if (syncTimer) clearTimeout(syncTimer); });
 
   function loadShelves() {
     if (!user) return;
