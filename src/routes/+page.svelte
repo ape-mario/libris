@@ -3,12 +3,14 @@
   import { goto, afterNavigate } from '$app/navigation';
   import { base } from '$app/paths';
   import { getBooks, searchBooks, getBooksByCategory } from '$lib/services/books';
+  import { getUserBookData } from '$lib/services/userbooks';
+  import { getCurrentUser } from '$lib/stores/user.svelte';
   import { q } from '$lib/db';
   import type { Book } from '$lib/db';
   import BookCard from '$lib/components/BookCard.svelte';
   import { t, bookCount } from '$lib/i18n/index.svelte';
 
-  type SortKey = 'recent' | 'title' | 'author';
+  type SortKey = 'recent' | 'title' | 'author' | 'rating' | 'year' | 'publisher';
   const PAGE_SIZE = 60;
 
   let allBooks = $state<Book[]>([]);
@@ -23,11 +25,14 @@
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let unsubBooks: (() => void) | null = null;
 
+  let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
   onMount(() => {
     loadLibrary();
-    // Observe Y.Doc for remote sync updates (books added/removed from other devices)
+    // Observe Y.Doc for remote sync updates — debounce to avoid re-rendering on every update
     unsubBooks = q.observe('books', () => {
-      loadLibrary();
+      if (syncTimer) clearTimeout(syncTimer);
+      syncTimer = setTimeout(() => loadLibrary(), 300);
     });
   });
 
@@ -65,10 +70,21 @@
       result = [...allBooks];
     }
 
+    const user = getCurrentUser();
     if (sortBy === 'title') {
       result.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === 'author') {
       result.sort((a, b) => (a.authors[0] || '').localeCompare(b.authors[0] || ''));
+    } else if (sortBy === 'rating' && user) {
+      result.sort((a, b) => {
+        const ra = getUserBookData(user.id, a.id)?.rating || 0;
+        const rb = getUserBookData(user.id, b.id)?.rating || 0;
+        return rb - ra;
+      });
+    } else if (sortBy === 'year') {
+      result.sort((a, b) => (b.publishYear || 0) - (a.publishYear || 0));
+    } else if (sortBy === 'publisher') {
+      result.sort((a, b) => (a.publisher || 'zzz').localeCompare(b.publisher || 'zzz'));
     } else {
       result.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime());
     }
@@ -99,6 +115,9 @@
     { key: 'recent' as SortKey, label: t('library.sort.recent') },
     { key: 'title' as SortKey, label: t('library.sort.title') },
     { key: 'author' as SortKey, label: t('library.sort.author') },
+    { key: 'rating' as SortKey, label: t('library.sort.rating') },
+    { key: 'year' as SortKey, label: t('library.sort.year') },
+    { key: 'publisher' as SortKey, label: t('library.sort.publisher') },
   ]);
 </script>
 

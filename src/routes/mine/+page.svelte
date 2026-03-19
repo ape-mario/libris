@@ -17,9 +17,14 @@
   let loading = $state(true);
 
   let unsub: (() => void)[] = [];
+  let syncTimer: ReturnType<typeof setTimeout> | null = null;
+  function debouncedLoadTab() {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => loadTab(), 300);
+  }
   onMount(() => {
     loadTab();
-    unsub = [q.observe('userBookData', () => loadTab()), q.observe('books', () => loadTab())];
+    unsub = [q.observe('userBookData', debouncedLoadTab), q.observe('books', debouncedLoadTab)];
   });
   onDestroy(() => unsub.forEach(f => f()));
 

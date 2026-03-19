@@ -105,7 +105,12 @@
         loadingRecs = false;
       }).catch(() => { loadingRecs = false; });
 
-      unsubStats = [q.observe('userBookData', () => loadStats()), q.observe('books', () => loadStats())];
+      let statsSyncTimer: ReturnType<typeof setTimeout> | null = null;
+      const debouncedLoadStats = () => {
+        if (statsSyncTimer) clearTimeout(statsSyncTimer);
+        statsSyncTimer = setTimeout(() => loadStats(), 300);
+      };
+      unsubStats = [q.observe('userBookData', debouncedLoadStats), q.observe('books', debouncedLoadStats)];
     }
     loading = false;
   });

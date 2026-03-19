@@ -34,6 +34,9 @@ export default {
   'library.sort.recent': 'Recent',
   'library.sort.title': 'Title',
   'library.sort.author': 'Author',
+  'library.sort.rating': 'Rating',
+  'library.sort.year': 'Year',
+  'library.sort.publisher': 'Publisher',
   'library.filter': 'Filter',
   'library.filter.all': 'All',
 

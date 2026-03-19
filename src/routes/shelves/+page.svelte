@@ -19,9 +19,14 @@
   let showCreate = $state(false);
 
   let unsub: (() => void)[] = [];
+  let syncTimer: ReturnType<typeof setTimeout> | null = null;
+  function debouncedLoadShelves() {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => loadShelves(), 300);
+  }
   onMount(() => {
     loadShelves();
-    unsub = [q.observe('shelves', () => loadShelves()), q.observe('books', () => loadShelves())];
+    unsub = [q.observe('shelves', debouncedLoadShelves), q.observe('books', debouncedLoadShelves)];
   });
   onDestroy(() => unsub.forEach(f => f()));
 

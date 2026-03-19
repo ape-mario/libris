@@ -34,6 +34,9 @@ export default {
   'library.sort.recent': 'Terbaru',
   'library.sort.title': 'Judul',
   'library.sort.author': 'Penulis',
+  'library.sort.rating': 'Rating',
+  'library.sort.year': 'Tahun',
+  'library.sort.publisher': 'Penerbit',
   'library.filter': 'Filter',
   'library.filter.all': 'Semua',
 
