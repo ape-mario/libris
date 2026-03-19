@@ -11,6 +11,7 @@
   import { t, bookCount } from '$lib/i18n/index.svelte';
 
   type SortKey = 'recent' | 'title' | 'author' | 'rating' | 'year' | 'publisher';
+  type StatusFilter = '' | 'read' | 'reading' | 'unread' | 'dnf' | 'wishlist';
   const PAGE_SIZE = 60;
 
   let allBooks = $state<Book[]>([]);
@@ -20,10 +21,14 @@
   let loading = $state(false);
   let sortBy = $state<SortKey>('recent');
   let filterCategory = $state('');
+  let filterStatus = $state<StatusFilter>('');
+  let filterRating = $state(0);
   let categories = $state<string[]>([]);
   let showFilters = $state(false);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let unsubBooks: (() => void) | null = null;
+  let sentinelRef = $state<HTMLDivElement | null>(null);
+  let observer: IntersectionObserver | null = null;
 
   let syncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -38,6 +43,18 @@
 
   onDestroy(() => {
     unsubBooks?.();
+    observer?.disconnect();
+  });
+
+  $effect(() => {
+    if (sentinelRef && !observer) {
+      observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && books.length > visibleCount) {
+          visibleCount += PAGE_SIZE;
+        }
+      }, { rootMargin: '200px' });
+      observer.observe(sentinelRef);
+    }
   });
 
   // afterNavigate fires on every client-side navigation back to this page
@@ -71,6 +88,22 @@
     }
 
     const user = getCurrentUser();
+
+    // Filter by status
+    if (filterStatus && user) {
+      if (filterStatus === 'wishlist') {
+        result = result.filter(b => getUserBookData(user.id, b.id)?.isWishlist);
+      } else {
+        result = result.filter(b => getUserBookData(user.id, b.id)?.status === filterStatus);
+      }
+    }
+
+    // Filter by minimum rating
+    if (filterRating > 0 && user) {
+      result = result.filter(b => (getUserBookData(user.id, b.id)?.rating || 0) >= filterRating);
+    }
+
+    // Sort
     if (sortBy === 'title') {
       result.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortBy === 'author') {
@@ -108,6 +141,16 @@
   function setFilter(cat: string) {
     filterCategory = cat;
     if (cat) query = '';
+    applyFilters();
+  }
+
+  function setStatusFilter(status: StatusFilter) {
+    filterStatus = status;
+    applyFilters();
+  }
+
+  function setRatingFilter(rating: number) {
+    filterRating = filterRating === rating ? 0 : rating;
     applyFilters();
   }
 
@@ -168,6 +211,41 @@
         </div>
       </div>
 
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">{t('library.filter.status')}</span>
+        <div class="flex gap-1.5 overflow-x-auto pb-0.5">
+          {#each [
+            { key: '' as StatusFilter, label: t('library.filter.all') },
+            { key: 'read' as StatusFilter, label: t('book.status_read') },
+            { key: 'reading' as StatusFilter, label: t('book.status_reading') },
+            { key: 'unread' as StatusFilter, label: t('book.status_unread') },
+            { key: 'dnf' as StatusFilter, label: t('book.status_dnf') },
+            { key: 'wishlist' as StatusFilter, label: t('book.wishlist_in') }
+          ] as opt}
+            <button
+              class="tab-pill !py-1 !px-3 !text-xs {filterStatus === opt.key ? 'tab-pill-active' : 'tab-pill-inactive'}"
+              onclick={() => setStatusFilter(opt.key)}
+            >{opt.label}</button>
+          {/each}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">Rating</span>
+        <div class="flex gap-1 pb-0.5">
+          {#each [1, 2, 3, 4, 5] as star}
+            <button
+              class="text-lg transition-colors {filterRating >= star ? 'text-gold' : 'text-warm-200 hover:text-warm-300'}"
+              onclick={() => setRatingFilter(star)}
+              aria-label="{star}+ stars"
+            >&#9733;</button>
+          {/each}
+          {#if filterRating > 0}
+            <span class="text-[10px] text-ink-muted ml-1 self-center">{filterRating}+</span>
+          {/if}
+        </div>
+      </div>
+
       {#if categories.length > 0}
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider w-14 flex-shrink-0">{t('library.filter')}</span>
@@ -204,6 +282,9 @@
   {:else if books.length === 0}
     <p class="text-center text-ink-muted py-12">{t('library.no_results')} "{query || filterCategory}"</p>
   {:else}
+    {#if books.length !== allBooks.length || filterStatus || filterRating > 0}
+      <p class="text-xs text-ink-muted mb-3">{t('library.showing', { count: books.length.toString(), total: allBooks.length.toString() })}</p>
+    {/if}
     <div class="flex flex-wrap gap-x-4 gap-y-6">
       {#each visibleBooks as book, i}
         <div style="animation-delay: {Math.min(i * 40, 400)}ms" class="animate-fade-up">
@@ -212,10 +293,8 @@
       {/each}
     </div>
     {#if hasMore}
-      <div class="flex justify-center mt-8">
-        <button class="btn-secondary" onclick={() => visibleCount += PAGE_SIZE}>
-          {t('library.show_more')} ({books.length - visibleCount} more)
-        </button>
+      <div bind:this={sentinelRef} class="flex justify-center mt-8">
+        <div class="w-8 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
       </div>
     {/if}
   {/if}

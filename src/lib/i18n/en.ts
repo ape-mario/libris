@@ -37,8 +37,10 @@ export default {
   'library.sort.rating': 'Rating',
   'library.sort.year': 'Year',
   'library.sort.publisher': 'Publisher',
-  'library.filter': 'Filter',
+  'library.filter': 'Category',
   'library.filter.all': 'All',
+  'library.filter.status': 'Status',
+  'library.showing': '{count} of {total} books',
 
   // Browse page
   'browse.title': 'Browse',

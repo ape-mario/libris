@@ -37,8 +37,10 @@ export default {
   'library.sort.rating': 'Rating',
   'library.sort.year': 'Tahun',
   'library.sort.publisher': 'Penerbit',
-  'library.filter': 'Filter',
+  'library.filter': 'Kategori',
   'library.filter.all': 'Semua',
+  'library.filter.status': 'Status',
+  'library.showing': '{count} dari {total} buku',
 
   // Browse page
   'browse.title': 'Jelajahi',
