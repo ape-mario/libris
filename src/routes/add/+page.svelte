@@ -14,7 +14,7 @@
   import { t } from '$lib/i18n/index.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
 
-  let mode = $state<'search' | 'manual' | 'scan'>('search');
+  let mode = $state<'search' | 'manual' | 'scan' | 'bulk'>('search');
   let searchQuery = $state('');
   let searchResults = $state<OpenLibraryResult[]>([]);
   let searching = $state(false);
@@ -42,6 +42,96 @@
     unsubAdd = q.observe('series', () => { seriesList = getAllSeries(); });
   });
   onDestroy(() => unsubAdd?.());
+
+  // Bulk import
+  interface BulkItem {
+    isbn: string;
+    result: OpenLibraryResult | null;
+    status: 'pending' | 'loading' | 'found' | 'not_found' | 'duplicate' | 'added';
+  }
+
+  let bulkInput = $state('');
+  let bulkItems = $state<BulkItem[]>([]);
+  let bulkProcessing = $state(false);
+  let bulkProgress = $state(0);
+
+  function parseBulkISBNs(): string[] {
+    return bulkInput
+      .split(/[\n,;]+/)
+      .map(s => s.replace(/[^0-9Xx]/g, '').trim())
+      .filter(s => s.length >= 10);
+  }
+
+  async function startBulkLookup() {
+    const isbns = parseBulkISBNs();
+    if (isbns.length === 0) return;
+
+    bulkItems = isbns.map(isbn => ({ isbn, result: null, status: 'pending' }));
+    bulkProcessing = true;
+    bulkProgress = 0;
+
+    // Process with concurrency limit of 3
+    const concurrency = 3;
+    let index = 0;
+
+    async function processNext() {
+      while (index < bulkItems.length) {
+        const i = index++;
+        const item = bulkItems[i];
+
+        // Check duplicate first
+        if (hasBookWithISBN(item.isbn)) {
+          bulkItems[i] = { ...item, status: 'duplicate' };
+          bulkProgress++;
+          continue;
+        }
+
+        bulkItems[i] = { ...item, status: 'loading' };
+        bulkItems = [...bulkItems]; // trigger reactivity
+
+        const result = await lookupByISBN(item.isbn);
+        if (result) {
+          bulkItems[i] = { ...item, result, status: 'found' };
+        } else {
+          bulkItems[i] = { ...item, status: 'not_found' };
+        }
+        bulkProgress++;
+        bulkItems = [...bulkItems];
+
+        // Rate limit: small delay between requests
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+
+    await Promise.all(Array.from({ length: concurrency }, processNext));
+    bulkProcessing = false;
+  }
+
+  function bulkAddAll() {
+    let added = 0;
+    for (const item of bulkItems) {
+      if (item.status !== 'found' || !item.result) continue;
+      const r = item.result;
+      const book = addBook({
+        title: r.title,
+        authors: r.authors,
+        isbn: r.isbn,
+        coverUrl: r.coverUrl,
+        publisher: r.publisher,
+        publishYear: r.publishYear,
+        categories: []
+      });
+      if (book) {
+        item.status = 'added';
+        added++;
+      }
+    }
+    bulkItems = [...bulkItems];
+    showToast(t('add.bulk.added', { count: added.toString() }), 'success');
+  }
+
+  let bulkFoundCount = $derived(bulkItems.filter(i => i.status === 'found').length);
+  let bulkAddedCount = $derived(bulkItems.filter(i => i.status === 'added').length);
 
   async function handleBarcode(code: string) {
     isbn = code;
@@ -157,11 +247,12 @@
 
   <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('add.title')}</h1>
 
-  <div class="flex gap-2 mb-6">
+  <div class="flex gap-2 mb-6 overflow-x-auto pb-0.5">
     {#each [
       { key: 'search', label: t('add.search') },
       { key: 'manual', label: t('add.manual') },
-      { key: 'scan', label: t('add.scan') }
+      { key: 'scan', label: t('add.scan') },
+      { key: 'bulk', label: t('add.bulk') }
     ] as tab_item}
       <button
         class="tab-pill {mode === tab_item.key ? 'tab-pill-active' : 'tab-pill-inactive'}"
@@ -213,6 +304,83 @@
   {#if mode === 'scan'}
     <div class="rounded-xl overflow-hidden">
       <BarcodeScanner onDetected={handleBarcode} />
+    </div>
+  {/if}
+
+  {#if mode === 'bulk'}
+    <div class="flex flex-col gap-4">
+      <div class="card p-5 flex flex-col gap-3">
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.bulk.input_label')}</span>
+          <textarea
+            bind:value={bulkInput}
+            placeholder={t('add.bulk.input_placeholder')}
+            rows="6"
+            class="input-field font-mono text-xs leading-relaxed resize-y"
+          ></textarea>
+        </label>
+        <div class="flex items-center gap-3">
+          <button
+            class="btn-primary"
+            onclick={startBulkLookup}
+            disabled={bulkProcessing || parseBulkISBNs().length === 0}
+          >
+            {bulkProcessing ? t('add.bulk.looking_up') : t('add.bulk.lookup', { count: parseBulkISBNs().length.toString() })}
+          </button>
+          {#if bulkProcessing}
+            <span class="text-xs text-ink-muted">{bulkProgress}/{bulkItems.length}</span>
+          {/if}
+        </div>
+      </div>
+
+      {#if bulkItems.length > 0}
+        <!-- Progress bar -->
+        {#if bulkProcessing}
+          <div class="h-1.5 rounded-full bg-warm-100 overflow-hidden">
+            <div class="h-full rounded-full bg-accent transition-all duration-300" style="width: {(bulkProgress / bulkItems.length) * 100}%"></div>
+          </div>
+        {/if}
+
+        <!-- Results -->
+        <div class="flex flex-col gap-2">
+          {#each bulkItems as item}
+            <div class="card flex items-center gap-3 p-3">
+              <span class="font-mono text-[10px] text-warm-400 w-28 flex-shrink-0 truncate">{item.isbn}</span>
+              {#if item.status === 'loading'}
+                <div class="w-6 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
+              {:else if item.status === 'found' || item.status === 'added'}
+                <div class="flex-1 min-w-0">
+                  <span class="text-sm font-medium text-ink truncate block">{item.result?.title}</span>
+                  <span class="text-xs text-ink-muted truncate block">{item.result?.authors.join(', ')}</span>
+                </div>
+                {#if item.status === 'added'}
+                  <span class="text-xs text-sage font-medium flex-shrink-0">✓</span>
+                {/if}
+              {:else if item.status === 'duplicate'}
+                <span class="text-xs text-warm-400 flex-1">{t('add.bulk.duplicate')}</span>
+              {:else if item.status === 'not_found'}
+                <span class="text-xs text-warm-400 flex-1">{t('add.bulk.not_found')}</span>
+              {:else}
+                <span class="text-xs text-warm-300 flex-1">—</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <!-- Add all button -->
+        {#if !bulkProcessing && bulkFoundCount > 0 && bulkAddedCount < bulkFoundCount}
+          <button class="btn-primary w-full" onclick={bulkAddAll}>
+            {t('add.bulk.add_all', { count: bulkFoundCount.toString() })}
+          </button>
+        {/if}
+
+        {#if bulkAddedCount > 0 && bulkAddedCount === bulkFoundCount}
+          <div class="text-center py-4">
+            <p class="text-sm text-sage font-medium">{t('add.bulk.complete')}</p>
+            <a href="{base}/" class="text-xs text-accent mt-2 inline-block">{t('add.bulk.go_library')}</a>
+          </div>
+        {/if}
+      {/if}
     </div>
   {/if}
 
