@@ -142,6 +142,18 @@
       : 0
   );
 
+  // Confetti state
+  let showConfetti = $state(false);
+  let confettiTriggered = false;
+
+  $effect(() => {
+    if (goalPercent >= 100 && hasGoal && !confettiTriggered) {
+      confettiTriggered = true;
+      showConfetti = true;
+      setTimeout(() => { showConfetti = false; }, 2000);
+    }
+  });
+
   let goalStatus = $derived.by(() => {
     if (!hasGoal) return '';
     const target = parseInt(goalTarget);
@@ -203,8 +215,21 @@
     </div>
   {:else if !stats || stats.totalBooks === 0}
     <div class="text-center py-16">
-      <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      <div class="mx-auto mb-4 flex items-center justify-center">
+        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Chart axes -->
+          <line x1="16" y1="18" x2="16" y2="60" style="stroke: var(--color-warm-300); stroke-width: 1.5"/>
+          <line x1="16" y1="60" x2="68" y2="60" style="stroke: var(--color-warm-300); stroke-width: 1.5"/>
+          <!-- Chart bars -->
+          <rect x="22" y="48" width="8" height="12" rx="1.5" style="fill: var(--color-warm-200)"/>
+          <rect x="34" y="38" width="8" height="22" rx="1.5" style="fill: var(--color-accent); opacity: 0.7"/>
+          <rect x="46" y="28" width="8" height="32" rx="1.5" style="fill: var(--color-accent); opacity: 0.85"/>
+          <rect x="58" y="22" width="8" height="38" rx="1.5" style="fill: var(--color-accent)"/>
+          <!-- Trend line -->
+          <path d="M26 46 L38 36 L50 26 L62 20" style="stroke: var(--color-warm-400); stroke-width: 1.5; fill: none; stroke-dasharray: 3 2"/>
+          <!-- Small book icon on top bar -->
+          <rect x="59" y="16" width="6" height="5" rx="0.5" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 0.75"/>
+        </svg>
       </div>
       <p class="text-sm text-ink-muted">{t('stats.no_data')}</p>
     </div>
@@ -236,6 +261,16 @@
               {goalStatus}
             </span>
           </div>
+          {#if showConfetti}
+            <div class="confetti-container" aria-hidden="true">
+              {#each Array(20) as _, i}
+                <div
+                  class="confetti-piece confetti-piece-{i % 5}"
+                  style="left: {10 + (i / 20) * 80}%; animation-delay: {i * 50}ms"
+                ></div>
+              {/each}
+            </div>
+          {/if}
         </div>
       {:else if !hasGoal && !isCurrentYear && !isAllTime}
         <!-- No goal set for past year — show nothing -->
@@ -391,6 +426,60 @@
 </div>
 
 <style>
+  .confetti-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .confetti-piece {
+    position: absolute;
+    bottom: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
+    animation: confetti-burst 1.8s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    opacity: 0;
+  }
+  .confetti-piece-0 { background: var(--color-accent); border-radius: 50%; }
+  .confetti-piece-1 { background: var(--color-sage); }
+  .confetti-piece-2 { background: var(--color-gold); border-radius: 50%; }
+  .confetti-piece-3 { background: var(--color-berry); }
+  .confetti-piece-4 { background: var(--color-warm-400); border-radius: 50%; }
+
+  @keyframes confetti-burst {
+    0% {
+      transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-80px) translateX(calc((var(--random, 0.5) - 0.5) * 120px)) rotate(720deg) scale(0.3);
+      opacity: 0;
+    }
+  }
+  .confetti-piece:nth-child(odd) {
+    --random: 0.8;
+    animation-name: confetti-burst-left;
+  }
+  .confetti-piece:nth-child(even) {
+    --random: 0.2;
+    animation-name: confetti-burst-right;
+  }
+  @keyframes confetti-burst-left {
+    0% { transform: translateY(0) translateX(0) rotate(0deg) scale(1); opacity: 1; }
+    30% { opacity: 1; }
+    100% { transform: translateY(-70px) translateX(-30px) rotate(-540deg) scale(0.2); opacity: 0; }
+  }
+  @keyframes confetti-burst-right {
+    0% { transform: translateY(0) translateX(0) rotate(0deg) scale(1); opacity: 1; }
+    30% { opacity: 1; }
+    100% { transform: translateY(-60px) translateX(30px) rotate(540deg) scale(0.2); opacity: 0; }
+  }
+
   .year-dropdown-trigger {
     display: flex;
     align-items: center;

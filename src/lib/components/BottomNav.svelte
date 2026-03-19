@@ -1,7 +1,24 @@
 <script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
   import { page } from '$app/state';
   import { base } from '$app/paths';
   import { t } from '$lib/i18n/index.svelte';
+  import { getBooks } from '$lib/services/books';
+  import { q } from '$lib/db';
+
+  let bookCount = $state(0);
+  let unsubBooks: (() => void) | null = null;
+
+  onMount(() => {
+    bookCount = getBooks().length;
+    unsubBooks = q.observe('books', () => {
+      bookCount = getBooks().length;
+    });
+  });
+
+  onDestroy(() => {
+    unsubBooks?.();
+  });
 
   let tabs = $derived([
     { href: `${base}/`, label: t('nav.library'), icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>` },
@@ -25,7 +42,12 @@
         href={tab.href}
         class="nav-item flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all {isActive(tab.href) ? 'text-accent nav-active' : 'text-ink-muted hover:text-ink-light'}"
       >
-        <span class="transition-transform {isActive(tab.href) ? 'scale-110' : ''}">{@html tab.icon}</span>
+        <span class="relative transition-transform {isActive(tab.href) ? 'scale-110' : ''}">
+          {@html tab.icon}
+          {#if tab.href === `${base}/` && bookCount > 0}
+            <span class="book-count-badge">{bookCount}</span>
+          {/if}
+        </span>
         <span class="text-[9px] font-semibold tracking-wide uppercase">{tab.label}</span>
       </a>
     {/each}
@@ -33,6 +55,22 @@
 </nav>
 
 <style>
+  .book-count-badge {
+    position: absolute;
+    top: -6px;
+    right: -10px;
+    min-width: 16px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 7px;
+    background: var(--color-accent);
+    color: var(--color-cream);
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    pointer-events: none;
+  }
   .nav-item {
     position: relative;
   }
