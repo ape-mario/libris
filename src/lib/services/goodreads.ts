@@ -4,6 +4,9 @@ interface GoodreadsRow {
 	title: string;
 	authors: string[];
 	isbn: string | undefined;
+	publisher: string | undefined;
+	publishYear: number | undefined;
+	edition: string | undefined;
 	rating: number | undefined;
 	shelves: string[];
 	dateRead: string | undefined;
@@ -104,6 +107,10 @@ function parseGoodreadsRow(row: Record<string, string>): GoodreadsRow | null {
 
 	const rating = parseInt(row['My Rating'] || '0');
 	const numPages = parseInt(row['Number of Pages'] || '0') || undefined;
+	const publisher = (row['Publisher'] || '').trim() || undefined;
+	const yearPublished = parseInt(row['Year Published'] || row['Original Publication Year'] || '0');
+	const publishYear = yearPublished > 0 ? yearPublished : undefined;
+	const edition = (row['Edition'] || '').trim() || undefined;
 
 	const shelves = (row['Bookshelves'] || row['Exclusive Shelf'] || '')
 		.split(',')
@@ -114,6 +121,9 @@ function parseGoodreadsRow(row: Record<string, string>): GoodreadsRow | null {
 		title,
 		authors,
 		isbn: isbn || undefined,
+		publisher,
+		publishYear,
+		edition,
 		rating: rating > 0 ? rating : undefined,
 		shelves,
 		dateRead: row['Date Read'] || undefined,
@@ -173,6 +183,9 @@ export function importGoodreadsCSV(csvText: string, userId: string): number {
 				isbn: parsed.isbn,
 				coverUrl,
 				categories: shelvesToCategories(parsed.shelves),
+				publisher: parsed.publisher,
+				publishYear: parsed.publishYear,
+				edition: parsed.edition,
 				dateAdded: parsed.dateAdded ? new Date(parsed.dateAdded).toISOString() : new Date().toISOString(),
 				dateModified: new Date().toISOString()
 			});

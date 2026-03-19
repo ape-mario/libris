@@ -3,7 +3,6 @@
   import { base } from '$app/paths';
   import { getBooks } from '$lib/services/books';
   import { getAllSeries } from '$lib/services/series';
-  import { getBooksBySeries } from '$lib/services/books';
   import { q } from '$lib/db';
   import type { Series } from '$lib/db';
   import { t } from '$lib/i18n/index.svelte';
@@ -19,6 +18,7 @@
     const books = getBooks();
     const catMap = new Map<string, number>();
     const authorMap = new Map<string, number>();
+    const seriesCountMap = new Map<string, number>();
 
     for (const book of books) {
       for (const cat of book.categories) {
@@ -26,6 +26,9 @@
       }
       for (const author of book.authors) {
         authorMap.set(author, (authorMap.get(author) || 0) + 1);
+      }
+      if (book.seriesId) {
+        seriesCountMap.set(book.seriesId, (seriesCountMap.get(book.seriesId) || 0) + 1);
       }
     }
 
@@ -37,10 +40,9 @@
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
-    const allSeries = getAllSeries();
-    seriesList = allSeries.map((s) => ({
+    seriesList = getAllSeries().map((s) => ({
       ...s,
-      count: getBooksBySeries(s.id).length
+      count: seriesCountMap.get(s.id) || 0
     }));
   }
 
