@@ -23,7 +23,7 @@ export default {
 
   // Library page
   'library.title': 'Library',
-  'library.search': 'Search your library...',
+  'library.search': 'Search by title, author, publisher, ISBN...',
   'library.empty.title': 'Your library is empty',
   'library.empty.subtitle': 'Start building your collection',
   'library.empty.cta': 'Add your first book',
@@ -128,6 +128,7 @@ export default {
   'book.edit_subtitle': 'Update book metadata, categories, and series',
   'book.save': 'Save Changes',
   'book.book_number': 'Book {n}',
+  'book.related': 'Related Books',
 
   // Dialogs
   'dialog.cancel': 'Cancel',
@@ -161,6 +162,7 @@ export default {
   'settings.export_title': 'Export Library',
   'settings.export_desc': 'Download your entire library as a JSON backup file.',
   'settings.export_btn': 'Export Data',
+  'settings.export_csv': 'Export CSV',
   'settings.import_title': 'Import Library',
   'settings.import_desc': 'Restore from a backup file. Existing data will be merged.',
   'settings.sync_title': 'Device Sync',
@@ -201,6 +203,7 @@ export default {
   'book.progress.total_pages': 'Total pages',
   'book.progress.percent': '{percent}% complete',
   'book.progress.pages': 'Page {current} of {total}',
+  'book.progress.history': 'Reading progress',
 
   // Goodreads import
   'settings.goodreads_title': 'Import from Goodreads',
@@ -261,6 +264,10 @@ export default {
   'error.generic': 'Something went wrong',
   'error.unexpected': 'An unexpected error occurred.',
   'error.back': 'Back to Library',
+
+  // PWA
+  'pwa.install': 'Install Libris',
+  'pwa.install_desc': 'Add to home screen',
 
   // Common
   'common.back': 'Back',

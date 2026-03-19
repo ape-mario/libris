@@ -1,12 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import type { Book } from '$lib/db';
   import { getCoverBase64 } from '$lib/services/coverCache';
+  import { getCurrentUser } from '$lib/stores/user.svelte';
+  import { getUserBookData, setUserBookData } from '$lib/services/userbooks';
 
   let { book, onclick }: { book: Book; onclick?: () => void } = $props();
 
   let coverSrc = $state<string | null>(book.coverUrl || null);
   let coverLoading = $state(!!book.coverUrl);
+  let showQuickMenu = $state(false);
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
   onMount(async () => {
     const base64 = await getCoverBase64(book.id);
@@ -14,12 +18,56 @@
       coverSrc = base64;
     }
     coverLoading = false;
+    document.addEventListener('click', closeMenu);
   });
+
+  onDestroy(() => {
+    document.removeEventListener('click', closeMenu);
+  });
+
+  function closeMenu() {
+    showQuickMenu = false;
+  }
+
+  function startLongPress() {
+    longPressTimer = setTimeout(() => {
+      showQuickMenu = true;
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function quickSetStatus(status: 'read' | 'reading' | 'unread' | 'dnf') {
+    const user = getCurrentUser();
+    if (!user) return;
+    setUserBookData(user.id, book.id, { status });
+    showQuickMenu = false;
+  }
+
+  let currentStatus = $derived.by(() => {
+    const user = getCurrentUser();
+    return user ? getUserBookData(user.id, book.id)?.status : undefined;
+  });
+
+  const statusDot: Record<string, string> = {
+    read: 'bg-sage',
+    reading: 'bg-accent',
+    dnf: 'bg-berry',
+    unread: 'bg-warm-300'
+  };
 </script>
 
 <button
-  class="book-card group flex flex-col gap-2.5 w-[7.5rem] text-left"
+  class="book-card group flex flex-col gap-2.5 w-[7.5rem] text-left relative"
   {onclick}
+  onpointerdown={startLongPress}
+  onpointerup={cancelLongPress}
+  onpointerleave={cancelLongPress}
 >
   <div class="relative w-[7.5rem] h-[10.5rem] rounded-lg overflow-hidden book-cover-shadow transition-all duration-300 flex-shrink-0 bg-warm-100">
     {#if coverSrc}
@@ -35,11 +83,33 @@
       </div>
     {/if}
     <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-black/[0.06] dark:bg-white/[0.08]"></div>
+    {#if currentStatus}
+      <div class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full {statusDot[currentStatus] || 'bg-warm-300'} ring-1 ring-surface"></div>
+    {/if}
   </div>
   <div class="w-full px-0.5">
     <h3 class="font-display text-[11px] font-semibold text-ink leading-tight truncate">{book.title}</h3>
     <p class="text-[10px] text-ink-muted truncate mt-0.5">{book.authors.join(', ')}</p>
   </div>
+
+  {#if showQuickMenu}
+    <div class="quick-menu absolute top-0 left-0 right-0 z-20 card p-1.5 shadow-lg animate-scale-in" onclick={(e: MouseEvent) => e.stopPropagation()}>
+      {#each [
+        { status: 'read' as const, label: '✓ Read', dot: 'bg-sage' },
+        { status: 'reading' as const, label: '◉ Reading', dot: 'bg-accent' },
+        { status: 'unread' as const, label: '○ Unread', dot: 'bg-warm-300' },
+        { status: 'dnf' as const, label: '✕ DNF', dot: 'bg-berry' }
+      ] as opt}
+        <button
+          class="w-full text-left text-[10px] font-medium px-2 py-1.5 rounded-md transition-colors {currentStatus === opt.status ? 'bg-warm-100 text-ink' : 'text-ink-light hover:bg-warm-100'}"
+          onclick={(e: MouseEvent) => { e.stopPropagation(); quickSetStatus(opt.status); }}
+        >
+          <span class="inline-block w-1.5 h-1.5 rounded-full {opt.dot} mr-1.5 align-middle"></span>
+          {opt.label}
+        </button>
+      {/each}
+    </div>
+  {/if}
 </button>
 
 <style>

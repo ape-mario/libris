@@ -126,12 +126,20 @@ export async function cacheAllCovers(): Promise<void> {
 	const allBooks = q.getAll<Book>('books');
 	const uncached = allBooks.filter((b) => !!b.coverUrl);
 
-	for (const book of uncached) {
-		const existing = await getCoverBase64(book.id);
-		if (existing) continue;
-		await cacheCoverIfNeeded(book.id);
-		await new Promise((r) => setTimeout(r, 200));
+	const CONCURRENCY = 3;
+	let index = 0;
+
+	async function worker(): Promise<void> {
+		while (index < uncached.length) {
+			const book = uncached[index++];
+			const existing = await getCoverBase64(book.id);
+			if (existing) continue;
+			await cacheCoverIfNeeded(book.id);
+		}
 	}
+
+	const workers = Array.from({ length: Math.min(CONCURRENCY, uncached.length) }, () => worker());
+	await Promise.all(workers);
 }
 
 export async function clearCoverCache(): Promise<void> {

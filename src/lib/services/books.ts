@@ -8,9 +8,20 @@ export function hasBookWithISBN(isbn: string): boolean {
 	return q.filter<Book>('books', (b) => b.isbn === isbn).length > 0;
 }
 
+function normalizeTitle(title: string): string {
+	return title.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, ' ').trim();
+}
+
+export function findSimilarBooks(title: string): Book[] {
+	const normalized = normalizeTitle(title);
+	if (!normalized) return [];
+	return q.filter<Book>('books', (b) => normalizeTitle(b.title) === normalized);
+}
+
 export function addBook(data: NewBook, allowDuplicate = false): Book | null {
-	if (data.isbn && !allowDuplicate) {
-		if (hasBookWithISBN(data.isbn)) return null;
+	if (!allowDuplicate) {
+		if (data.isbn && hasBookWithISBN(data.isbn)) return null;
+		if (findSimilarBooks(data.title).length > 0) return null;
 	}
 
 	const book: Book = {

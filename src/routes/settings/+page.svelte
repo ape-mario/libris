@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { exportData, importData } from '$lib/services/backup';
+  import { exportData, importData, exportCSV } from '$lib/services/backup';
   import { importGoodreadsCSV } from '$lib/services/goodreads';
   import { showToast } from '$lib/stores/toast.svelte';
   import { clearCoverCache } from '$lib/services/coverCache';
@@ -142,6 +142,23 @@
       showToast(t('toast.export_failed'), 'error');
     }
     exporting = false;
+  }
+
+  function handleExportCSV() {
+    if (!user) return;
+    try {
+      const csv = exportCSV(user.id);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `libris-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(t('toast.exported'), 'success');
+    } catch {
+      showToast(t('toast.export_failed'), 'error');
+    }
   }
 
   async function handleImport(e: Event) {
@@ -354,9 +371,14 @@
     <div class="card p-5">
       <h2 class="font-display font-semibold text-ink mb-1">{t('settings.export_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.export_desc')}</p>
-      <button class="btn-primary" onclick={handleExport} disabled={exporting}>
-        {exporting ? '...' : t('settings.export_btn')}
-      </button>
+      <div class="flex gap-2">
+        <button class="btn-primary" onclick={handleExport} disabled={exporting}>
+          {exporting ? '...' : t('settings.export_btn')}
+        </button>
+        <button class="btn-secondary" onclick={handleExportCSV}>
+          {t('settings.export_csv')}
+        </button>
+      </div>
     </div>
 
     <!-- Import -->

@@ -1,5 +1,6 @@
 import { q, type Book, type UserBookData, type User, type Series, type Shelf } from '$lib/db';
 import { getCoverBase64, setCoverBase64 } from './coverCache';
+import { getUserBookData } from './userbooks';
 
 export async function exportData(): Promise<string> {
 	const users = q.getAll<User>('users');
@@ -34,6 +35,36 @@ export async function exportData(): Promise<string> {
 		null,
 		2
 	);
+}
+
+function csvEscape(value: string): string {
+	if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+		return '"' + value.replace(/"/g, '""') + '"';
+	}
+	return value;
+}
+
+export function exportCSV(userId: string): string {
+	const books = q.getAll<Book>('books');
+	const headers = ['Title', 'Authors', 'ISBN', 'Publisher', 'Publish Year', 'Edition', 'Categories', 'Date Added', 'Status', 'Rating', 'Date Read', 'Notes'];
+	const rows = books.map((book) => {
+		const ubd = getUserBookData(userId, book.id);
+		return [
+			book.title,
+			book.authors.join('; '),
+			book.isbn || '',
+			book.publisher || '',
+			book.publishYear?.toString() || '',
+			book.edition || '',
+			book.categories.join('; '),
+			book.dateAdded,
+			ubd?.status || 'unread',
+			ubd?.rating?.toString() || '',
+			ubd?.dateRead || '',
+			ubd?.notes || ''
+		].map(csvEscape).join(',');
+	});
+	return [headers.join(','), ...rows].join('\n');
 }
 
 export async function importData(json: string): Promise<void> {

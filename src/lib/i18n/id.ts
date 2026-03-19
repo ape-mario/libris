@@ -23,7 +23,7 @@ export default {
 
   // Library page
   'library.title': 'Koleksi',
-  'library.search': 'Cari koleksi buku...',
+  'library.search': 'Cari judul, penulis, penerbit, ISBN...',
   'library.empty.title': 'Koleksi masih kosong',
   'library.empty.subtitle': 'Mulai bangun koleksi bukumu',
   'library.empty.cta': 'Tambah buku pertama',
@@ -128,6 +128,7 @@ export default {
   'book.edit_subtitle': 'Perbarui metadata, kategori, dan seri buku',
   'book.save': 'Simpan Perubahan',
   'book.book_number': 'Buku {n}',
+  'book.related': 'Buku Terkait',
 
   // Dialogs
   'dialog.cancel': 'Batal',
@@ -161,6 +162,7 @@ export default {
   'settings.export_title': 'Ekspor Koleksi',
   'settings.export_desc': 'Unduh seluruh koleksi sebagai file cadangan JSON.',
   'settings.export_btn': 'Ekspor Data',
+  'settings.export_csv': 'Ekspor CSV',
   'settings.import_title': 'Impor Koleksi',
   'settings.import_desc': 'Pulihkan dari file cadangan. Data yang ada akan digabungkan.',
   'settings.sync_title': 'Sinkronisasi Perangkat',
@@ -201,6 +203,7 @@ export default {
   'book.progress.total_pages': 'Total halaman',
   'book.progress.percent': '{percent}% selesai',
   'book.progress.pages': 'Halaman {current} dari {total}',
+  'book.progress.history': 'Riwayat progres',
 
   // Goodreads import
   'settings.goodreads_title': 'Impor dari Goodreads',
@@ -261,6 +264,10 @@ export default {
   'error.generic': 'Terjadi kesalahan',
   'error.unexpected': 'Terjadi kesalahan yang tidak terduga.',
   'error.back': 'Kembali ke Perpustakaan',
+
+  // PWA
+  'pwa.install': 'Pasang Libris',
+  'pwa.install_desc': 'Tambahkan ke layar utama',
 
   // Common
   'common.back': 'Kembali',

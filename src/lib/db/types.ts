@@ -32,6 +32,7 @@ export interface UserBookData {
   isWishlist: boolean;
   currentPage?: number;
   totalPages?: number;
+  progressHistory?: { date: string; page: number }[];
 }
 
 export interface Series {

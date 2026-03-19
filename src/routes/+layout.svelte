@@ -20,6 +20,23 @@
   let user = $derived(getCurrentUser());
   let locale = $derived(getLocale());
 
+  // PWA install prompt
+  let deferredPrompt = $state<Event | null>(null);
+  let showInstallBanner = $state(false);
+
+  function dismissInstall() {
+    showInstallBanner = false;
+    deferredPrompt = null;
+    try { localStorage.setItem('libris_pwa_dismissed', '1'); } catch {}
+  }
+
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+    (deferredPrompt as any).prompt();
+    const result = await (deferredPrompt as any).userChoice;
+    if (result.outcome === 'accepted') dismissInstall();
+  }
+
   $effect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.lang = locale;
@@ -28,6 +45,16 @@
 
   onMount(async () => {
     initTheme();
+
+    // PWA install prompt
+    const dismissed = localStorage.getItem('libris_pwa_dismissed');
+    if (!dismissed) {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        showInstallBanner = true;
+      });
+    }
 
     // Install global error handler
     const { installGlobalErrorHandler, logError } = await import('$lib/services/logger');
@@ -102,6 +129,16 @@
 {:else if !user}
   <ProfilePicker />
 {:else}
+  {#if showInstallBanner}
+    <div class="fixed top-0 left-0 right-0 z-50 bg-accent text-cream px-4 py-2.5 flex items-center gap-3 animate-fade-up">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold">{t('pwa.install')}</p>
+        <p class="text-xs opacity-80">{t('pwa.install_desc')}</p>
+      </div>
+      <button class="bg-cream/20 hover:bg-cream/30 text-cream text-xs font-medium px-3 py-1.5 rounded-lg transition-colors" onclick={handleInstall}>{t('pwa.install')}</button>
+      <button class="text-cream/60 hover:text-cream text-lg leading-none" onclick={dismissInstall}>&#215;</button>
+    </div>
+  {/if}
   <TopBar />
   <main class="pt-20 pb-24 px-5 min-h-screen bg-cream max-w-2xl mx-auto noise-bg">
     {@render children()}

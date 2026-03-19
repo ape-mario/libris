@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { base } from '$app/paths';
   import { onMount, onDestroy } from 'svelte';
-  import { getBookById, updateBook, deleteBook } from '$lib/services/books';
+  import { getBookById, updateBook, deleteBook, getBooksBySeries, getBooks } from '$lib/services/books';
   import { getUserBookData, setUserBookData } from '$lib/services/userbooks';
   import { resizeImage } from '$lib/services/covers';
   import { getCurrentUser } from '$lib/stores/user.svelte';
@@ -15,6 +15,7 @@
   import { t } from '$lib/i18n/index.svelte';
   import { cacheCoverIfNeeded, getCoverBase64, setCoverBase64 } from '$lib/services/coverCache';
   import { getUserShelves, addBookToShelf, removeBookFromShelf } from '$lib/services/shelves';
+  import BookCard from '$lib/components/BookCard.svelte';
 
   let book = $state<Book | null>(null);
   let userData = $state<UserBookData | null>(null);
@@ -191,7 +192,23 @@
   function updateProgress(field: 'currentPage' | 'totalPages', value: string) {
     if (!user || !book) return;
     const num = parseInt(value) || undefined;
-    userData = setUserBookData(user.id, book.id, { [field]: num });
+    const updates: Record<string, unknown> = { [field]: num };
+
+    // Log progress history when currentPage changes
+    if (field === 'currentPage' && num) {
+      const today = new Date().toISOString().slice(0, 10);
+      const history = [...(userData?.progressHistory || [])];
+      // Update today's entry or add new one
+      const todayIdx = history.findIndex(h => h.date === today);
+      if (todayIdx >= 0) {
+        history[todayIdx] = { date: today, page: num };
+      } else {
+        history.push({ date: today, page: num });
+      }
+      updates.progressHistory = history;
+    }
+
+    userData = setUserBookData(user.id, book.id, updates);
   }
 
   function toggleShelf(shelf: Shelf) {
@@ -208,6 +225,34 @@
       showToast(t('toast.book_added_to_shelf', { name: shelf.name }), 'success');
     }
   }
+
+  let relatedBooks = $derived.by(() => {
+    const current = book;
+    if (!current) return [];
+    const seen = new Set<string>([current.id]);
+    const result: Book[] = [];
+    // 1. Same series
+    if (current.seriesId) {
+      for (const b of getBooksBySeries(current.seriesId)) {
+        if (!seen.has(b.id)) { seen.add(b.id); result.push(b); }
+      }
+    }
+    // 2. Same author, 3. Same category
+    const allBooks = getBooks();
+    for (const b of allBooks) {
+      if (seen.has(b.id)) continue;
+      if (b.authors.some(a => current.authors.includes(a))) {
+        seen.add(b.id); result.push(b);
+      }
+    }
+    for (const b of allBooks) {
+      if (seen.has(b.id)) continue;
+      if (b.categories.some(c => current.categories.includes(c))) {
+        seen.add(b.id); result.push(b);
+      }
+    }
+    return result.slice(0, 6);
+  });
 
   let statusConfig = $derived({
     unread: { label: t('book.status_unread'), color: 'bg-warm-200 text-warm-700' },
@@ -440,6 +485,31 @@
                 <p class="text-xs text-ink-muted mt-1.5">{t('book.progress.pages', { current: userData.currentPage, total: userData.totalPages })}</p>
               {/if}
             {/if}
+
+            <!-- Progress sparkline -->
+            {#if userData?.progressHistory && userData.progressHistory.length >= 2}
+              {@const history = userData.progressHistory.slice(-14)}
+              {@const maxPage = userData.totalPages || Math.max(...history.map(h => h.page))}
+              {@const points = history.map((h, i) => `${(i / (history.length - 1)) * 100},${100 - (h.page / maxPage) * 100}`).join(' ')}
+              <div class="mt-3">
+                <p class="text-[10px] text-warm-400 mb-1">{t('book.progress.history')}</p>
+                <svg viewBox="0 0 100 100" class="w-full h-12" preserveAspectRatio="none">
+                  <polyline
+                    points={points}
+                    fill="none"
+                    stroke="var(--color-accent)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+                <div class="flex justify-between text-[9px] text-warm-400">
+                  <span>{history[0].date.slice(5)}</span>
+                  <span>{history[history.length - 1].date.slice(5)}</span>
+                </div>
+              </div>
+            {/if}
           </div>
         </div>
       {/if}
@@ -487,6 +557,19 @@
           </a>
         {/if}
       </div>
+
+      {#if relatedBooks.length > 0}
+        <div class="mb-6">
+          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.related')}</h2>
+          <div class="flex gap-4 overflow-x-auto pb-2">
+            {#each relatedBooks as related}
+              <div class="flex-shrink-0">
+                <BookCard book={related} onclick={() => goto(`${base}/book/${related.id}`)} />
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
 
       <div class="mt-8 pt-6 border-t border-warm-100">
         <button
