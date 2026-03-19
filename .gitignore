@@ -21,3 +21,6 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Internal docs (not for public)
+docs/libris-ecosystem-ideas.md
