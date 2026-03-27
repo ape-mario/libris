@@ -205,13 +205,21 @@ export function importGoodreadsCSV(csvText: string, userId: string): number {
 						? new Date(parsed.dateAdded).toISOString()
 						: undefined)
 				: undefined;
+			// For currently-reading, use dateAdded as dateStarted
+			const dateStarted = status === 'reading' && parsed.dateAdded
+				? new Date(parsed.dateAdded).toISOString()
+				: undefined;
+			// Custom shelves (excluding built-in ones) as tags
+			const tags = shelvesToCategories(parsed.shelves);
 			q.setItem('userBookData', key, {
 				userId,
 				bookId,
 				status,
 				rating: parsed.rating,
 				isWishlist,
+				dateStarted,
 				dateRead,
+				tags: tags.length > 0 ? tags : undefined,
 				totalPages: parsed.numPages
 			});
 		}

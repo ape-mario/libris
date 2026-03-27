@@ -24,7 +24,7 @@ export async function exportData(): Promise<string> {
 
 	return JSON.stringify(
 		{
-			version: 4,
+			version: 5,
 			exportedAt: new Date().toISOString(),
 			users,
 			books: booksWithCovers,
@@ -47,7 +47,7 @@ function csvEscape(value: string): string {
 
 export function exportCSV(userId: string): string {
 	const books = q.getAll<Book>('books');
-	const headers = ['Title', 'Authors', 'ISBN', 'Publisher', 'Publish Year', 'Edition', 'Categories', 'Date Added', 'Status', 'Rating', 'Date Read', 'Notes'];
+	const headers = ['Title', 'Authors', 'ISBN', 'Publisher', 'Publish Year', 'Edition', 'Categories', 'Tags', 'Date Added', 'Date Started', 'Date Read', 'Status', 'Rating', 'Notes'];
 	const rows = books.map((book) => {
 		const ubd = getUserBookData(userId, book.id);
 		return [
@@ -58,10 +58,12 @@ export function exportCSV(userId: string): string {
 			book.publishYear?.toString() || '',
 			book.edition || '',
 			(book.categories || []).join('; '),
+			(ubd?.tags || []).join('; '),
 			book.dateAdded,
+			ubd?.dateStarted || '',
+			ubd?.dateRead || '',
 			ubd?.status || 'unread',
 			ubd?.rating?.toString() || '',
-			ubd?.dateRead || '',
 			ubd?.notes || ''
 		].map(csvEscape).join(',');
 	});
@@ -82,10 +84,12 @@ export async function exportXLSX(userId: string): Promise<Blob> {
 			'Publish Year': book.publishYear || '',
 			Edition: book.edition || '',
 			Categories: (book.categories || []).join('; '),
+			Tags: (ubd?.tags || []).join('; '),
 			'Date Added': book.dateAdded,
+			'Date Started': ubd?.dateStarted || '',
+			'Date Read': ubd?.dateRead || '',
 			Status: ubd?.status || 'unread',
 			Rating: ubd?.rating || '',
-			'Date Read': ubd?.dateRead || '',
 			Notes: ubd?.notes || ''
 		};
 	});
@@ -137,11 +141,13 @@ export async function importXLSX(file: ArrayBuffer, userId: string): Promise<num
 		if (book) {
 			// Set user book data if status/rating provided
 			const status = (row['Status'] || '').trim().toLowerCase();
-			const rating = parseInt(row['Rating'] || '0') || undefined;
+			const rating = parseFloat(row['Rating'] || '0') || undefined;
 			const notes = (row['Notes'] || '').trim() || undefined;
 			const dateRead = (row['Date Read'] || '').trim() || undefined;
+			const dateStarted = (row['Date Started'] || '').trim() || undefined;
+			const tags = (row['Tags'] || '').split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
 
-			if (status || rating || notes) {
+			if (status || rating || notes || dateStarted || tags.length > 0) {
 				const validStatus = ['read', 'reading', 'unread', 'dnf'].includes(status) ? status as 'read' | 'reading' | 'unread' | 'dnf' : 'unread';
 				const key = `${userId}:${book.id}`;
 				q.setItem('userBookData', key, {
@@ -150,6 +156,8 @@ export async function importXLSX(file: ArrayBuffer, userId: string): Promise<num
 					status: validStatus,
 					rating,
 					notes,
+					tags: tags.length > 0 ? tags : undefined,
+					dateStarted: validStatus === 'reading' ? (dateStarted || new Date().toISOString()) : dateStarted,
 					dateRead: validStatus === 'read' ? (dateRead || new Date().toISOString()) : undefined,
 					isWishlist: false
 				});
