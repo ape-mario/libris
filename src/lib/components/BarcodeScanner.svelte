@@ -14,10 +14,18 @@
         inputStream: {
           type: 'LiveStream',
           target: scannerRef,
-          constraints: { facingMode: 'environment', width: 640, height: 480 }
+          constraints: {
+            facingMode: 'environment',
+            width: { min: 1280, ideal: 1920 },
+            height: { min: 720, ideal: 1080 },
+            ...({ focusMode: 'continuous' } as any)
+          }
         },
+        locate: true,
+        frequency: 10,
         decoder: {
-          readers: ['ean_reader', 'ean_8_reader', 'upc_reader']
+          readers: ['ean_reader', 'ean_8_reader', 'upc_reader'],
+          multiple: false
         }
       },
       (err: any) => {
@@ -32,7 +40,13 @@
 
     Quagga.onDetected((result: any) => {
       const code = result.codeResult?.code;
-      if (code) {
+      const errors = result.codeResult?.decodedCodes
+        ?.filter((d: any) => d.error != null)
+        ?.map((d: any) => d.error) || [];
+      const avgError = errors.length > 0 ? errors.reduce((a: number, b: number) => a + b, 0) / errors.length : 1;
+
+      // Only accept reads with low error rate (high confidence)
+      if (code && avgError < 0.15) {
         Quagga.stop();
         active = false;
         onDetected(code);
