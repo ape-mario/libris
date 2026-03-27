@@ -209,7 +209,8 @@ export default {
   'settings.sync_protected': 'Dilindungi',
 
   // Scanner
-  'scanner.hint': 'Arahkan kamera ke barcode buku',
+  'scanner.loading': 'Membuka kamera...',
+  'scanner.hint': 'Arahkan barcode ke dalam bingkai',
   'scanner.error': 'Akses kamera ditolak atau tidak tersedia',
 
   // Reading progress

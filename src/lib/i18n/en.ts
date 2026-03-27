@@ -209,7 +209,8 @@ export default {
   'settings.sync_protected': 'Protected',
 
   // Scanner
-  'scanner.hint': 'Point your camera at the book\'s barcode',
+  'scanner.loading': 'Opening camera...',
+  'scanner.hint': 'Align barcode within the frame',
   'scanner.error': 'Camera access denied or not available',
 
   // Reading progress
