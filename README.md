@@ -37,9 +37,11 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - **Kilas balik tahunan** — Ringkasan bacaan per tahun: buku favorit, genre terbanyak, penulis terfavorit, buku terpanjang/terpendek, tercepat dibaca
 - **Ekspor/Impor** — Backup dan restore koleksi sebagai JSON, CSV, atau XLSX
 - **Impor Goodreads** — Migrasi koleksi dari file CSV ekspor Goodreads (termasuk penerbit, tahun, cetakan)
+- **Room password** — Lindungi room sync dengan kata sandi opsional
 - **Sync antar perangkat** — Sync real-time via room code menggunakan Yjs CRDTs
 - **Offline-first** — Berfungsi penuh tanpa internet, data di IndexedDB dengan cache sampul (LRU eviction)
 - **PWA** — Installable sebagai app di HP dan desktop
+- **Native mobile** — Android (via Capacitor) untuk distribusi di Play Store
 - **Bilingual** — English dan Bahasa Indonesia
 
 ## Tech Stack
@@ -50,6 +52,7 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - [PartyKit](https://partykit.io) / [Hocuspocus](https://tiptap.dev/hocuspocus) (WebSocket sync providers)
 - [QuaggaJS](https://github.com/ericblade/quagga2) (barcode scanning)
 - [SheetJS](https://sheetjs.com) (XLSX import/export)
+- [Capacitor](https://capacitorjs.com) (native mobile wrapper)
 - [Vite PWA](https://vite-pwa-org.netlify.app) (service worker & manifest)
 - Static adapter (deploy anywhere)
 
