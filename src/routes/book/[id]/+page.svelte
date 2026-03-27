@@ -118,9 +118,20 @@
     userData = setUserBookData(user.id, book.id, { status });
   }
 
-  function updateRating(rating: number) {
+  function updateRating(star: number) {
     if (!user || !book) return;
-    const clamped = Math.max(1, Math.min(5, Math.round(rating)));
+    const current = userData?.rating || 0;
+    let newRating: number | undefined;
+    if (current === star) {
+      // Click same star: drop to half
+      newRating = star - 0.5;
+    } else if (current === star - 0.5) {
+      // Click same star again: clear
+      newRating = undefined;
+    } else {
+      newRating = star;
+    }
+    const clamped = newRating != null ? Math.max(0.5, Math.min(5, newRating)) : undefined;
     userData = setUserBookData(user.id, book.id, { rating: clamped });
   }
 
@@ -254,6 +265,86 @@
     }
     return result.slice(0, 6);
   });
+
+  // Tags
+  let newTag = $state('');
+  function addTag() {
+    if (!user || !book || !newTag.trim()) return;
+    const tags = [...(userData?.tags || [])];
+    const tag = newTag.trim().toLowerCase();
+    if (!tags.includes(tag)) {
+      tags.push(tag);
+      userData = setUserBookData(user.id, book.id, { tags });
+    }
+    newTag = '';
+  }
+  function removeTag(tag: string) {
+    if (!user || !book) return;
+    const tags = (userData?.tags || []).filter(t => t !== tag);
+    userData = setUserBookData(user.id, book.id, { tags });
+  }
+
+  // Acquisition
+  let acquisitionOpen = $state(false);
+  function updateAcquisition(field: 'acquiredFrom' | 'acquiredPrice' | 'acquiredDate', value: string) {
+    if (!user || !book) return;
+    userData = setUserBookData(user.id, book.id, { [field]: value || undefined });
+  }
+
+  // Quotes
+  let addingQuote = $state(false);
+  let newQuoteText = $state('');
+  let newQuotePage = $state('');
+  let newQuoteNote = $state('');
+  function saveQuote() {
+    if (!user || !book || !newQuoteText.trim()) return;
+    const quotes = [...(userData?.quotes || [])];
+    quotes.push({
+      text: newQuoteText.trim(),
+      page: newQuotePage ? parseInt(newQuotePage) : undefined,
+      note: newQuoteNote.trim() || undefined
+    });
+    userData = setUserBookData(user.id, book.id, { quotes });
+    newQuoteText = '';
+    newQuotePage = '';
+    newQuoteNote = '';
+    addingQuote = false;
+  }
+  function removeQuote(index: number) {
+    if (!user || !book) return;
+    const quotes = [...(userData?.quotes || [])];
+    quotes.splice(index, 1);
+    userData = setUserBookData(user.id, book.id, { quotes });
+  }
+
+  // Re-read history
+  let addingReread = $state(false);
+  let rereadStarted = $state('');
+  let rereadFinished = $state('');
+  let rereadRating = $state('');
+  let rereadNotes = $state('');
+  function saveReread() {
+    if (!user || !book) return;
+    const history = [...(userData?.readHistory || [])];
+    history.push({
+      dateStarted: rereadStarted || undefined,
+      dateFinished: rereadFinished || undefined,
+      rating: rereadRating ? parseFloat(rereadRating) : undefined,
+      notes: rereadNotes.trim() || undefined
+    });
+    userData = setUserBookData(user.id, book.id, { readHistory: history });
+    rereadStarted = '';
+    rereadFinished = '';
+    rereadRating = '';
+    rereadNotes = '';
+    addingReread = false;
+  }
+  function removeReread(index: number) {
+    if (!user || !book) return;
+    const history = [...(userData?.readHistory || [])];
+    history.splice(index, 1);
+    userData = setUserBookData(user.id, book.id, { readHistory: history });
+  }
 
   let statusConfig = $derived({
     unread: { label: t('book.status_unread'), color: 'bg-warm-200 text-warm-700' },
@@ -415,18 +506,24 @@
 
           <div class="flex gap-0.5 mt-3" role="radiogroup" aria-label="Rating">
             {#each [1, 2, 3, 4, 5] as star}
+              {@const rating = userData?.rating || 0}
+              {@const isFull = rating >= star}
+              {@const isHalf = !isFull && rating >= star - 0.5}
               <button
-                class="star-btn {(userData?.rating || 0) >= star ? 'star-active' : 'star-inactive'}"
+                class="star-btn {isFull ? 'star-active' : isHalf ? 'star-active opacity-50' : 'star-inactive'}"
                 onclick={() => updateRating(star)}
                 onkeydown={(e) => {
                   if (e.key === 'ArrowRight' && star < 5) updateRating(star + 1);
                   if (e.key === 'ArrowLeft' && star > 1) updateRating(star - 1);
                 }}
                 role="radio"
-                aria-checked={(userData?.rating || 0) === star}
+                aria-checked={rating === star || rating === star - 0.5}
                 aria-label="{star} star{star > 1 ? 's' : ''}"
               >&#9733;</button>
             {/each}
+            {#if userData?.rating}
+              <span class="text-xs text-ink-muted ml-1 self-center">{userData.rating}</span>
+            {/if}
           </div>
         </div>
       </div>
@@ -500,9 +597,77 @@
             </div>
           </div>
         </div>
+
+        <!-- Re-read History -->
+        <div class="mb-6 animate-fade-up">
+          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.reread_history')}</h2>
+          {#if userData?.readHistory?.length}
+            <div class="flex flex-col gap-2 mb-3">
+              {#each userData.readHistory as entry, i}
+                <div class="card p-3 flex items-center gap-3">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm text-ink">
+                      <span>{entry.dateStarted?.slice(0, 10) || t('book.reread_history.no_date')}</span>
+                      <span class="text-ink-muted mx-1">&rarr;</span>
+                      <span>{entry.dateFinished?.slice(0, 10) || t('book.reread_history.no_date')}</span>
+                    </div>
+                    <div class="flex gap-2 mt-0.5">
+                      {#if entry.rating}
+                        <span class="text-xs text-accent">{'&#9733;'.repeat(Math.floor(entry.rating))}{entry.rating % 1 ? '&#189;' : ''}</span>
+                      {/if}
+                      {#if entry.notes}
+                        <span class="text-xs text-ink-muted truncate">{entry.notes}</span>
+                      {/if}
+                    </div>
+                  </div>
+                  <button class="text-warm-400 hover:text-berry transition-colors flex-shrink-0 text-xs" onclick={() => removeReread(i)}>&times;</button>
+                </div>
+              {/each}
+            </div>
+          {/if}
+          {#if addingReread}
+            <div class="card p-4 flex flex-col gap-3 animate-fade-up">
+              <div class="flex gap-3">
+                <label class="flex flex-col gap-1 flex-1">
+                  <span class="text-xs text-ink-muted">{t('book.reread_history.started')}</span>
+                  <input type="date" bind:value={rereadStarted} class="input-field !py-1.5 text-sm" />
+                </label>
+                <label class="flex flex-col gap-1 flex-1">
+                  <span class="text-xs text-ink-muted">{t('book.reread_history.finished')}</span>
+                  <input type="date" bind:value={rereadFinished} class="input-field !py-1.5 text-sm" />
+                </label>
+              </div>
+              <div class="flex gap-3">
+                <label class="flex flex-col gap-1 w-20">
+                  <span class="text-xs text-ink-muted">{t('library.sort.rating')}</span>
+                  <input type="number" bind:value={rereadRating} min="0.5" max="5" step="0.5" class="input-field !py-1.5 text-sm" />
+                </label>
+                <label class="flex flex-col gap-1 flex-1">
+                  <span class="text-xs text-ink-muted">{t('book.notes')}</span>
+                  <input type="text" bind:value={rereadNotes} class="input-field !py-1.5 text-sm" />
+                </label>
+              </div>
+              <div class="flex gap-2">
+                <button class="btn-secondary text-sm" onclick={saveReread}>{t('book.quotes.save')}</button>
+                <button class="btn-secondary text-sm" onclick={() => { addingReread = false; rereadStarted = ''; rereadFinished = ''; rereadRating = ''; rereadNotes = ''; }}>{t('book.quotes.cancel')}</button>
+              </div>
+            </div>
+          {:else}
+            <button class="btn-secondary text-sm" onclick={() => addingReread = true}>+ {t('book.reread_history.add')}</button>
+          {/if}
+        </div>
       {/if}
 
       {#if userData?.status === 'reading'}
+        <div class="mb-6 animate-fade-up">
+          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.date_started')}</h2>
+          <input
+            type="date"
+            value={userData?.dateStarted?.slice(0, 10) || ''}
+            onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateStarted: (e.target as HTMLInputElement).value || undefined }); }}
+            class="input-field !py-1.5 text-sm w-auto"
+          />
+        </div>
         <div class="mb-6 animate-fade-up">
           <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.progress')}</h2>
           <div class="card p-4">
@@ -582,6 +747,120 @@
           value={userData?.notes || ''}
           onblur={updateNotes}
         ></textarea>
+      </div>
+
+      <!-- Quotes -->
+      <div class="mb-6">
+        <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.quotes')}</h2>
+        {#if userData?.quotes?.length}
+          <div class="flex flex-col gap-2 mb-3">
+            {#each userData.quotes as quote, i}
+              <div class="card p-3">
+                <div class="flex justify-between items-start gap-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-ink italic">"{quote.text}"</p>
+                    <div class="flex gap-3 mt-1">
+                      {#if quote.page}<span class="text-xs text-ink-muted">{t('book.quotes.page')} {quote.page}</span>{/if}
+                      {#if quote.note}<span class="text-xs text-ink-muted">{quote.note}</span>{/if}
+                    </div>
+                  </div>
+                  <button class="text-warm-400 hover:text-berry transition-colors flex-shrink-0 text-xs" onclick={() => removeQuote(i)}>&times;</button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+        {#if addingQuote}
+          <div class="card p-4 flex flex-col gap-3 animate-fade-up">
+            <textarea
+              bind:value={newQuoteText}
+              placeholder={t('book.quotes.text_placeholder')}
+              class="input-field resize-none h-20 text-sm"
+            ></textarea>
+            <div class="flex gap-3">
+              <label class="flex flex-col gap-1 w-24">
+                <span class="text-xs text-ink-muted">{t('book.quotes.page')}</span>
+                <input type="number" bind:value={newQuotePage} min="1" class="input-field !py-1.5 text-sm" />
+              </label>
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-ink-muted">{t('book.quotes.note')}</span>
+                <input type="text" bind:value={newQuoteNote} placeholder={t('book.quotes.note_placeholder')} class="input-field !py-1.5 text-sm" />
+              </label>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-secondary text-sm" onclick={saveQuote}>{t('book.quotes.save')}</button>
+              <button class="btn-secondary text-sm" onclick={() => { addingQuote = false; newQuoteText = ''; newQuotePage = ''; newQuoteNote = ''; }}>{t('book.quotes.cancel')}</button>
+            </div>
+          </div>
+        {:else}
+          <button class="btn-secondary text-sm" onclick={() => addingQuote = true}>+ {t('book.quotes.add')}</button>
+        {/if}
+      </div>
+
+      <!-- Tags -->
+      <div class="mb-6">
+        <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.tags')}</h2>
+        {#if userData?.tags?.length}
+          <div class="flex gap-1.5 flex-wrap mb-2">
+            {#each userData.tags as tag}
+              <span class="text-xs px-2.5 py-0.5 bg-accent/10 text-accent rounded-full font-medium flex items-center gap-1">
+                {tag}
+                <button class="hover:text-berry transition-colors" onclick={() => removeTag(tag)}>&times;</button>
+              </span>
+            {/each}
+          </div>
+        {/if}
+        <input
+          type="text"
+          bind:value={newTag}
+          placeholder={t('book.tags_placeholder')}
+          class="input-field !py-1.5 text-sm"
+          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+        />
+      </div>
+
+      <!-- Acquisition -->
+      <div class="mb-6">
+        <button
+          class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1 hover:text-ink transition-colors"
+          onclick={() => acquisitionOpen = !acquisitionOpen}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform {acquisitionOpen ? 'rotate-90' : ''}"><path d="m9 18 6-6-6-6"/></svg>
+          {t('book.acquisition')}
+        </button>
+        {#if acquisitionOpen}
+          <div class="card p-4 mt-2.5 flex flex-col gap-3 animate-fade-up">
+            <label class="flex flex-col gap-1">
+              <span class="text-xs text-ink-muted">{t('book.acquisition.where')}</span>
+              <input
+                type="text"
+                value={userData?.acquiredFrom || ''}
+                onblur={(e) => updateAcquisition('acquiredFrom', (e.target as HTMLInputElement).value)}
+                class="input-field !py-1.5 text-sm"
+              />
+            </label>
+            <div class="flex gap-3">
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-ink-muted">{t('book.acquisition.price')}</span>
+                <input
+                  type="text"
+                  value={userData?.acquiredPrice || ''}
+                  onblur={(e) => updateAcquisition('acquiredPrice', (e.target as HTMLInputElement).value)}
+                  class="input-field !py-1.5 text-sm"
+                />
+              </label>
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-ink-muted">{t('book.acquisition.date')}</span>
+                <input
+                  type="date"
+                  value={userData?.acquiredDate?.slice(0, 10) || ''}
+                  onchange={(e) => updateAcquisition('acquiredDate', (e.target as HTMLInputElement).value)}
+                  class="input-field !py-1.5 text-sm"
+                />
+              </label>
+            </div>
+          </div>
+        {/if}
       </div>
 
       <div class="mb-6">

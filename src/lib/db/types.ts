@@ -26,13 +26,23 @@ export interface UserBookData {
   status: 'unread' | 'reading' | 'read' | 'dnf';
   rating?: number;
   notes?: string;
+  tags?: string[];
   lentTo?: string;
   lentDate?: string;
+  dateStarted?: string;
   dateRead?: string;
   isWishlist: boolean;
   currentPage?: number;
   totalPages?: number;
   progressHistory?: { date: string; page: number }[];
+  // Acquisition (optional)
+  acquiredFrom?: string;
+  acquiredPrice?: string;
+  acquiredDate?: string;
+  // Quotes/highlights
+  quotes?: { text: string; page?: number; note?: string }[];
+  // Re-read history
+  readHistory?: { dateStarted?: string; dateFinished?: string; rating?: number; notes?: string }[];
 }
 
 export interface Series {
