@@ -164,28 +164,8 @@
     </div>
   {:else if books.length === 0 && tab !== 'timeline'}
     <div class="text-center py-16">
-      <div class="mx-auto mb-4 flex items-center justify-center">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Armchair reading scene -->
-          <!-- Book being read -->
-          <path d="M30 50 C30 38, 40 34, 40 40" style="stroke: var(--color-accent); stroke-width: 1.5; fill: var(--color-warm-100)"/>
-          <path d="M50 50 C50 38, 40 34, 40 40" style="stroke: var(--color-accent); stroke-width: 1.5; fill: var(--color-warm-100)"/>
-          <line x1="40" y1="40" x2="40" y2="50" style="stroke: var(--color-accent); stroke-width: 1"/>
-          <!-- Page lines left -->
-          <line x1="33" y1="42" x2="38" y2="43" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <line x1="33" y1="45" x2="38" y2="45.5" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <!-- Page lines right -->
-          <line x1="42" y1="43" x2="47" y2="42" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <line x1="42" y1="45.5" x2="47" y2="45" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <!-- Steam/warmth lines (cozy reading) -->
-          <path d="M22 30 Q24 26, 22 22" style="stroke: var(--color-warm-300); stroke-width: 1; fill: none; opacity: 0.6"/>
-          <path d="M26 32 Q28 28, 26 24" style="stroke: var(--color-warm-300); stroke-width: 1; fill: none; opacity: 0.6"/>
-          <!-- Cup -->
-          <rect x="20" y="32" width="10" height="10" rx="2" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <path d="M30 35 Q34 35, 34 38 Q34 41, 30 41" style="stroke: var(--color-warm-300); stroke-width: 1; fill: none"/>
-          <!-- Heart -->
-          <path d="M56 28 C56 24, 60 22, 62 26 C64 22, 68 24, 68 28 C68 33, 62 37, 62 37 C62 37, 56 33, 56 28Z" style="fill: var(--color-accent); opacity: 0.3"/>
-        </svg>
+      <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
       </div>
       <p class="font-display text-lg text-ink-light mb-1">{t('mine.empty')}</p>
     </div>

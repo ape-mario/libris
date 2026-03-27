@@ -216,21 +216,8 @@
     </div>
   {:else if !stats || stats.totalBooks === 0}
     <div class="text-center py-16">
-      <div class="mx-auto mb-4 flex items-center justify-center">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Chart axes -->
-          <line x1="16" y1="18" x2="16" y2="60" style="stroke: var(--color-warm-300); stroke-width: 1.5"/>
-          <line x1="16" y1="60" x2="68" y2="60" style="stroke: var(--color-warm-300); stroke-width: 1.5"/>
-          <!-- Chart bars -->
-          <rect x="22" y="48" width="8" height="12" rx="1.5" style="fill: var(--color-warm-200)"/>
-          <rect x="34" y="38" width="8" height="22" rx="1.5" style="fill: var(--color-accent); opacity: 0.7"/>
-          <rect x="46" y="28" width="8" height="32" rx="1.5" style="fill: var(--color-accent); opacity: 0.85"/>
-          <rect x="58" y="22" width="8" height="38" rx="1.5" style="fill: var(--color-accent)"/>
-          <!-- Trend line -->
-          <path d="M26 46 L38 36 L50 26 L62 20" style="stroke: var(--color-warm-400); stroke-width: 1.5; fill: none; stroke-dasharray: 3 2"/>
-          <!-- Small book icon on top bar -->
-          <rect x="59" y="16" width="6" height="5" rx="0.5" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 0.75"/>
-        </svg>
+      <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
       </div>
       <p class="text-sm text-ink-muted">{t('stats.no_data')}</p>
     </div>

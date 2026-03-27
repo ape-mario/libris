@@ -93,26 +93,8 @@
     </div>
   {:else if shelves.length === 0}
     <div class="text-center py-16">
-      <div class="mx-auto mb-4 flex items-center justify-center">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Bookshelf -->
-          <rect x="12" y="58" width="56" height="3" rx="1" style="fill: var(--color-warm-300)"/>
-          <rect x="12" y="36" width="56" height="3" rx="1" style="fill: var(--color-warm-300)"/>
-          <!-- Shelf legs -->
-          <line x1="14" y1="36" x2="14" y2="61" style="stroke: var(--color-warm-300); stroke-width: 2"/>
-          <line x1="66" y1="36" x2="66" y2="61" style="stroke: var(--color-warm-300); stroke-width: 2"/>
-          <!-- Books on top shelf -->
-          <rect x="18" y="20" width="7" height="16" rx="1" style="fill: var(--color-accent); opacity: 0.8"/>
-          <rect x="27" y="22" width="6" height="14" rx="1" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <rect x="35" y="18" width="7" height="18" rx="1" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <rect x="44" y="23" width="6" height="13" rx="1" style="fill: var(--color-accent); opacity: 0.6"/>
-          <rect x="52" y="20" width="8" height="16" rx="1" style="fill: var(--color-warm-100); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <!-- Books on bottom shelf -->
-          <rect x="20" y="42" width="8" height="16" rx="1" style="fill: var(--color-warm-100); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <rect x="30" y="44" width="6" height="14" rx="1" style="fill: var(--color-accent); opacity: 0.7"/>
-          <rect x="38" y="41" width="7" height="17" rx="1" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1"/>
-          <rect x="47" y="45" width="6" height="13" rx="1" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1"/>
-        </svg>
+      <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
       </div>
       <p class="text-sm text-ink-muted">{t('shelves.empty')}</p>
     </div>

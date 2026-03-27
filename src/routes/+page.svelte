@@ -336,22 +336,8 @@
     </div>
   {:else if books.length === 0 && !query && !filterCategory}
     <div class="text-center py-16 animate-fade-in">
-      <div class="mx-auto mb-4 flex items-center justify-center">
-        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Stack of books -->
-          <rect x="18" y="52" width="44" height="8" rx="1.5" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1.5"/>
-          <rect x="22" y="44" width="36" height="8" rx="1.5" style="fill: var(--color-warm-100); stroke: var(--color-warm-300); stroke-width: 1.5"/>
-          <rect x="16" y="36" width="48" height="8" rx="1.5" style="fill: var(--color-warm-200); stroke: var(--color-warm-300); stroke-width: 1.5"/>
-          <!-- Open book on top -->
-          <path d="M28 34 C28 24, 40 20, 40 26" style="stroke: var(--color-accent); stroke-width: 1.5; fill: var(--color-warm-100)"/>
-          <path d="M52 34 C52 24, 40 20, 40 26" style="stroke: var(--color-accent); stroke-width: 1.5; fill: var(--color-warm-100)"/>
-          <line x1="40" y1="26" x2="40" y2="34" style="stroke: var(--color-accent); stroke-width: 1"/>
-          <!-- Page lines -->
-          <line x1="32" y1="27" x2="38" y2="28" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <line x1="32" y1="30" x2="38" y2="30.5" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <line x1="42" y1="28" x2="48" y2="27" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-          <line x1="42" y1="30.5" x2="48" y2="30" style="stroke: var(--color-warm-300); stroke-width: 0.75"/>
-        </svg>
+      <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       </div>
       <p class="font-display text-lg text-ink-light mb-1">{t('library.empty.title')}</p>
       <p class="text-sm text-ink-muted mb-6">{t('library.empty.subtitle')}</p>
