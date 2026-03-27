@@ -65,6 +65,8 @@ export default {
   'mine.wishlist': 'Daftar Keinginan',
   'mine.lent': 'Dipinjamkan',
   'mine.empty': 'Belum ada buku di sini.',
+  'mine.timeline': 'Riwayat',
+  'mine.timeline.unknown': 'Tidak diketahui',
   'mine.lent_to': 'Dipinjamkan ke',
 
   // Add book page
@@ -206,6 +208,11 @@ export default {
   'scanner.error': 'Akses kamera ditolak atau tidak tersedia',
 
   // Reading progress
+  'book.date_read': 'Tanggal Selesai Baca',
+  'book.date_read.precision': 'Ketepatan',
+  'book.date_read.exact': 'Tanggal tepat',
+  'book.date_read.month': 'Bulan & tahun',
+  'book.date_read.year': 'Tahun saja',
   'book.progress': 'Progres',
   'book.progress.current_page': 'Halaman saat ini',
   'book.progress.total_pages': 'Total halaman',

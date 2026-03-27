@@ -443,6 +443,65 @@
         </div>
       </div>
 
+      {#if userData?.status === 'read'}
+        <div class="mb-6 animate-fade-up">
+          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.date_read')}</h2>
+          <div class="card p-4">
+            <div class="flex gap-2 items-end">
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="text-xs text-ink-muted">{t('book.date_read.precision')}</span>
+                <select
+                  class="input-field !py-1.5 text-sm"
+                  value={userData?.dateRead ? (userData.dateRead.length <= 4 ? 'year' : userData.dateRead.length <= 7 ? 'month' : 'exact') : 'year'}
+                  onchange={(e) => {
+                    if (!user || !book) return;
+                    const precision = (e.target as HTMLSelectElement).value;
+                    const current = userData?.dateRead || '';
+                    let newDate = '';
+                    if (precision === 'year') newDate = current.slice(0, 4) || new Date().getFullYear().toString();
+                    else if (precision === 'month') newDate = current.slice(0, 7) || new Date().toISOString().slice(0, 7);
+                    else newDate = current.length > 10 ? current : (current.length === 7 ? current + '-01' : current.length === 4 ? current + '-01-01' : new Date().toISOString());
+                    userData = setUserBookData(user.id, book.id, { dateRead: newDate });
+                  }}
+                >
+                  <option value="exact">{t('book.date_read.exact')}</option>
+                  <option value="month">{t('book.date_read.month')}</option>
+                  <option value="year">{t('book.date_read.year')}</option>
+                </select>
+              </label>
+              {#if userData?.dateRead}
+                {@const precision = userData.dateRead.length <= 4 ? 'year' : userData.dateRead.length <= 7 ? 'month' : 'exact'}
+                {#if precision === 'exact'}
+                  <input
+                    type="date"
+                    value={userData.dateRead.slice(0, 10)}
+                    onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateRead: (e.target as HTMLInputElement).value }); }}
+                    class="input-field !py-1.5 text-sm flex-1"
+                  />
+                {:else if precision === 'month'}
+                  <input
+                    type="month"
+                    value={userData.dateRead.slice(0, 7)}
+                    onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateRead: (e.target as HTMLInputElement).value }); }}
+                    class="input-field !py-1.5 text-sm flex-1"
+                  />
+                {:else}
+                  <input
+                    type="number"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    value={userData.dateRead.slice(0, 4)}
+                    onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateRead: (e.target as HTMLInputElement).value }); }}
+                    class="input-field !py-1.5 text-sm w-24"
+                    placeholder="2020"
+                  />
+                {/if}
+              {/if}
+            </div>
+          </div>
+        </div>
+      {/if}
+
       {#if userData?.status === 'reading'}
         <div class="mb-6 animate-fade-up">
           <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.progress')}</h2>

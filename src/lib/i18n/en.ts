@@ -65,6 +65,8 @@ export default {
   'mine.wishlist': 'Wishlist',
   'mine.lent': 'Lent Out',
   'mine.empty': 'Nothing here yet.',
+  'mine.timeline': 'Timeline',
+  'mine.timeline.unknown': 'Unknown date',
   'mine.lent_to': 'Lent to',
 
   // Add book page
@@ -206,6 +208,11 @@ export default {
   'scanner.error': 'Camera access denied or not available',
 
   // Reading progress
+  'book.date_read': 'Date Read',
+  'book.date_read.precision': 'Precision',
+  'book.date_read.exact': 'Exact date',
+  'book.date_read.month': 'Month & year',
+  'book.date_read.year': 'Year only',
   'book.progress': 'Progress',
   'book.progress.current_page': 'Current page',
   'book.progress.total_pages': 'Total pages',

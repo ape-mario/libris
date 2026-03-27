@@ -11,10 +11,11 @@
   import { t } from '$lib/i18n/index.svelte';
 
   let user = $derived(getCurrentUser());
-  let tab = $state<'reading' | 'wishlist' | 'lent' | 'read' | 'dnf'>('reading');
+  let tab = $state<'reading' | 'wishlist' | 'lent' | 'read' | 'dnf' | 'timeline'>('reading');
 
-  const tabOrder: typeof tab[] = ['reading', 'wishlist', 'lent', 'read', 'dnf'];
+  const tabOrder: typeof tab[] = ['reading', 'wishlist', 'lent', 'read', 'dnf', 'timeline'];
   let books = $state<(UserBookData & { book: Book })[]>([]);
+  let timelineGroups = $state<{ label: string; items: (UserBookData & { book: Book })[] }[]>([]);
   let loading = $state(true);
   let swipeDirection = $state<'left' | 'right' | null>(null);
 
@@ -61,9 +62,52 @@
   });
   onDestroy(() => { unsub.forEach(f => f()); if (syncTimer) clearTimeout(syncTimer); });
 
+  function parseDateLabel(dateRead: string | undefined): { sortKey: string; label: string } {
+    if (!dateRead) return { sortKey: '0000', label: t('mine.timeline.unknown') };
+    if (dateRead.length <= 4) return { sortKey: dateRead, label: dateRead };
+    if (dateRead.length <= 7) {
+      const [y, m] = dateRead.split('-');
+      const monthName = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      return { sortKey: dateRead, label: monthName };
+    }
+    const d = new Date(dateRead);
+    const monthName = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    return { sortKey: dateRead.slice(0, 7), label: monthName };
+  }
+
   function loadTab() {
     if (!user) return;
     loading = true;
+
+    if (tab === 'timeline') {
+      const data = getUserBooks(user.id, { status: 'read' });
+      const enriched = data
+        .map((d) => {
+          const book = getBookById(d.bookId);
+          return book ? { ...d, book } : null;
+        })
+        .filter(Boolean) as (UserBookData & { book: Book })[];
+
+      // Group by date label
+      const groups = new Map<string, { sortKey: string; label: string; items: (UserBookData & { book: Book })[] }>();
+      for (const item of enriched) {
+        const { sortKey, label } = parseDateLabel(item.dateRead);
+        if (!groups.has(label)) groups.set(label, { sortKey, label, items: [] });
+        groups.get(label)!.items.push(item);
+      }
+
+      // Sort groups: newest first, "unknown" last
+      timelineGroups = [...groups.values()].sort((a, b) => {
+        if (a.sortKey === '0000') return 1;
+        if (b.sortKey === '0000') return -1;
+        return b.sortKey.localeCompare(a.sortKey);
+      });
+
+      books = [];
+      loading = false;
+      return;
+    }
+
     let data: UserBookData[];
 
     if (tab === 'reading') {
@@ -98,7 +142,8 @@
       { key: 'read', label: t('mine.finished') },
       { key: 'dnf', label: t('mine.dnf') },
       { key: 'wishlist', label: t('mine.wishlist') },
-      { key: 'lent', label: t('mine.lent') }
+      { key: 'lent', label: t('mine.lent') },
+      { key: 'timeline', label: t('mine.timeline') }
     ] as tab_item}
       <button
         class="tab-pill {tab === tab_item.key ? 'tab-pill-active' : 'tab-pill-inactive'}"
@@ -117,7 +162,7 @@
     <div class="flex justify-center py-16">
       <div class="w-8 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
     </div>
-  {:else if books.length === 0}
+  {:else if books.length === 0 && tab !== 'timeline'}
     <div class="text-center py-16">
       <div class="mx-auto mb-4 flex items-center justify-center">
         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,6 +189,43 @@
       </div>
       <p class="text-sm text-ink-muted">{t('mine.empty')}</p>
     </div>
+  {:else if tab === 'timeline'}
+    {#if timelineGroups.length === 0}
+      <p class="text-sm text-ink-muted text-center py-12">{t('mine.empty')}</p>
+    {:else}
+      <div class="flex flex-col gap-6">
+        {#each timelineGroups as group}
+          <div>
+            <div class="flex items-center gap-3 mb-3">
+              <h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{group.label}</h3>
+              <div class="flex-1 h-px bg-warm-100"></div>
+              <span class="text-xs text-warm-400">{group.items.length}</span>
+            </div>
+            <div class="flex flex-col gap-2">
+              {#each group.items as item}
+                <button
+                  class="card flex items-center gap-3 p-3 text-left hover:shadow-md transition-shadow w-full"
+                  onclick={() => goto(`${base}/book/${item.bookId}`)}
+                >
+                  <div class="w-9 h-[3.25rem] rounded overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
+                    {#if item.book.coverUrl}
+                      <img src={item.book.coverUrl} alt={item.book.title} class="w-full h-full object-cover" />
+                    {/if}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="font-display text-sm font-semibold text-ink truncate">{item.book.title}</div>
+                    <div class="text-xs text-ink-muted truncate">{(item.book.authors || []).join(', ')}</div>
+                  </div>
+                  {#if item.rating}
+                    <span class="text-xs text-gold flex-shrink-0">{'★'.repeat(item.rating)}</span>
+                  {/if}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {:else}
     {#if tab === 'lent'}
       <div class="flex flex-col gap-2">

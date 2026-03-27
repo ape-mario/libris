@@ -11,19 +11,21 @@ export function setUserBookData(
 	updates: Partial<
 		Pick<
 			UserBookData,
-			'status' | 'rating' | 'notes' | 'lentTo' | 'lentDate' | 'isWishlist' | 'currentPage' | 'totalPages' | 'progressHistory'
+			'status' | 'rating' | 'notes' | 'lentTo' | 'lentDate' | 'dateRead' | 'isWishlist' | 'currentPage' | 'totalPages' | 'progressHistory'
 		>
 	>
 ): UserBookData {
 	const key = `${userId}:${bookId}`;
 	const existing = q.getItem<UserBookData>('userBookData', key);
 
-	// Auto-manage dateRead when status changes
+	// Auto-manage dateRead when status changes (but don't override explicit dateRead)
 	const effectiveUpdates: Record<string, unknown> = { ...updates };
-	if (updates.status === 'read' && existing?.status !== 'read') {
-		effectiveUpdates.dateRead = new Date().toISOString();
-	} else if (updates.status && updates.status !== 'read' && existing?.status === 'read') {
-		effectiveUpdates.dateRead = undefined; // clears the field
+	if (!('dateRead' in updates)) {
+		if (updates.status === 'read' && existing?.status !== 'read') {
+			effectiveUpdates.dateRead = new Date().toISOString();
+		} else if (updates.status && updates.status !== 'read' && existing?.status === 'read') {
+			effectiveUpdates.dateRead = undefined; // clears the field
+		}
 	}
 
 	if (existing) {
