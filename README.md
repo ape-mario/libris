@@ -13,6 +13,7 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - **Deteksi duplikat** — Cek ISBN dan fuzzy matching judul saat tambah buku
 - **Banyak kopi** — Simpan buku duplikat (edisi berbeda atau kopi tambahan) dengan tracking terpisah
 - **Status bacaan** — Tandai buku sebagai sedang dibaca, selesai, DNF, atau wishlist per profil
+- **DNF tracking** — Catat alasan berhenti baca dan halaman terakhir saat DNF
 - **Quick status** — Long-press cover buku untuk ubah status langsung tanpa buka detail
 - **Bulk actions** — Pilih banyak buku sekaligus, ubah status atau tambah ke rak secara batch
 - **Rak buku** — Buat rak kustom untuk mengatur buku sesukamu
@@ -25,9 +26,16 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - **Target membaca** — Atur dan pantau target bacaan tahunan dengan confetti saat tercapai
 - **Rekomendasi** — Dapat saran buku berdasarkan riwayat bacaan (via Open Library)
 - **Peminjaman** — Catat siapa yang meminjam bukumu
-- **Catatan & rating** — Tambah catatan pribadi dan beri rating
+- **Catatan & rating** — Catatan pribadi, rating bintang (termasuk setengah bintang)
+- **Kutipan & sorotan** — Simpan kutipan favorit dengan nomor halaman dan catatan
+- **Custom tags** — Tag bebas per buku, terpisah dari rak dan kategori
+- **Riwayat baca ulang** — Catat beberapa kali baca buku yang sama dengan tanggal dan rating berbeda
+- **Tanggal mulai & selesai** — Track kapan mulai dan selesai baca, dengan granularitas fleksibel (tahun/bulan/tanggal tepat)
+- **Perolehan** — Catat di mana beli, harga, dan tanggal perolehan (opsional)
 - **Progres baca** — Tandai halaman, lihat grafik riwayat progres harian
-- **Ekspor/Impor** — Backup dan restore koleksi sebagai JSON atau CSV
+- **Timeline** — Riwayat buku selesai dibaca, dikelompokkan per bulan/tahun
+- **Kilas balik tahunan** — Ringkasan bacaan per tahun: buku favorit, genre terbanyak, penulis terfavorit, buku terpanjang/terpendek, tercepat dibaca
+- **Ekspor/Impor** — Backup dan restore koleksi sebagai JSON, CSV, atau XLSX
 - **Impor Goodreads** — Migrasi koleksi dari file CSV ekspor Goodreads (termasuk penerbit, tahun, cetakan)
 - **Sync antar perangkat** — Sync real-time via room code menggunakan Yjs CRDTs
 - **Offline-first** — Berfungsi penuh tanpa internet, data di IndexedDB dengan cache sampul (LRU eviction)
@@ -41,6 +49,7 @@ A personal book collection manager built as a Progressive Web App. Track your re
 - [Yjs](https://yjs.dev) (CRDT-based data layer with y-indexeddb persistence)
 - [PartyKit](https://partykit.io) / [Hocuspocus](https://tiptap.dev/hocuspocus) (WebSocket sync providers)
 - [QuaggaJS](https://github.com/ericblade/quagga2) (barcode scanning)
+- [SheetJS](https://sheetjs.com) (XLSX import/export)
 - [Vite PWA](https://vite-pwa-org.netlify.app) (service worker & manifest)
 - Static adapter (deploy anywhere)
 
@@ -81,6 +90,7 @@ src/
 │   ├── join/[code]/   # Link join room yang bisa dibagikan
 │   ├── mine/          # Status bacaan per user
 │   ├── settings/      # Pengaturan, backup, sync
+│   ├── review/[year]/ # Kilas balik tahunan
 │   ├── shelves/       # Rak buku kustom
 │   └── stats/         # Statistik & target membaca
 ├── static/            # Ikon PWA & aset
