@@ -138,17 +138,26 @@
   let bulkFoundCount = $derived(bulkItems.filter(i => i.status === 'found').length);
   let bulkAddedCount = $derived(bulkItems.filter(i => i.status === 'added').length);
 
+  let barcodeLoading = $state(false);
+
   async function handleBarcode(code: string) {
     isbn = code;
+    mode = 'manual';
+    barcodeLoading = true;
+
     const result = await lookupByISBN(code);
+    barcodeLoading = false;
+
     if (result) {
       title = result.title;
       authors = result.authors.join(', ');
       coverPreview = result.coverUrl || null;
       publisher = result.publisher || '';
       publishYear = result.publishYear?.toString() || '';
+      showToast(t('add.barcode_found', { title: result.title }), 'success');
+    } else {
+      showToast(t('add.barcode_not_found'), 'info');
     }
-    mode = 'manual';
   }
 
   async function handleSearch() {
@@ -392,6 +401,13 @@
   {/if}
 
   {#if mode === 'manual'}
+    {#if barcodeLoading}
+      <div class="card p-6 text-center mb-4 animate-fade-in">
+        <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse mx-auto mb-3"></div>
+        <p class="text-sm text-ink-muted">{t('add.barcode_searching')}</p>
+        <p class="text-xs text-warm-400 mt-1 font-mono">{isbn}</p>
+      </div>
+    {/if}
     <form class="flex flex-col gap-4" onsubmit={(e) => { e.preventDefault(); handleSave(); }}>
       {#if coverPreview}
         <div class="flex justify-center">
