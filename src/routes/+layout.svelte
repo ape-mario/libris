@@ -101,7 +101,10 @@
       if (joinMatch) {
         const code = formatRoomCode(joinMatch[1]);
         if (isValidRoomCode(code)) {
-          joinRoom(code);
+          // Extract password from hash fragment
+          const hash = page.url.hash?.slice(1) || '';
+          const password = hash ? new URLSearchParams(hash).get('pw') || undefined : undefined;
+          joinRoom(code, password);
         }
       } else {
         autoReconnect();

@@ -12,6 +12,7 @@
   import {
     getSyncStatus,
     getRoomCode,
+    getRoomPassword,
     onSyncStatusChange,
     createRoom,
     joinRoom,
@@ -112,11 +113,11 @@
   async function handleCopyLink() {
     if (!roomCode) return;
     try {
-      await navigator.clipboard.writeText(getRoomLink(roomCode, base));
+      await navigator.clipboard.writeText(getRoomLink(roomCode, base, getRoomPassword() || undefined));
       showToast(t('settings.sync_copied'), 'success');
     } catch {
       // Fallback
-      showToast(getRoomLink(roomCode, base), 'info');
+      showToast(getRoomLink(roomCode, base, getRoomPassword() || undefined), 'info');
     }
   }
 

@@ -27,8 +27,19 @@ export function formatRoomCode(code: string): string {
 	return `${normalized.slice(0, 4)}-${normalized.slice(4)}`;
 }
 
-export function getRoomLink(roomCode: string, basePath: string = ''): string {
-	return `${window.location.origin}${basePath}/join/${roomCode}`;
+export function getRoomLink(roomCode: string, basePath: string = '', password?: string): string {
+	const base = `${window.location.origin}${basePath}/join/${roomCode}`;
+	return password ? `${base}#pw=${encodeURIComponent(password)}` : base;
+}
+
+export function parsePasswordFromUrl(url: string): string | null {
+  try {
+    const hash = new URL(url).hash.slice(1);
+    if (!hash) return null;
+    return new URLSearchParams(hash).get('pw') || null;
+  } catch {
+    return null;
+  }
 }
 
 export function parseRoomCodeFromUrl(url: string): string | null {
