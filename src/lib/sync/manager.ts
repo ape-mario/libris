@@ -6,6 +6,7 @@ import { generateRoomCode } from './room';
 import { doc } from '$lib/db';
 
 const ROOM_KEY = 'libris_room_code';
+const ROOM_PASSWORD_KEY = 'libris_room_password';
 
 let provider: SyncProvider | null = null;
 let currentStatus: SyncStatus = 'disconnected';
@@ -20,7 +21,8 @@ function createProvider(config: SyncConfig): SyncProvider {
 	if (config.provider === 'hocuspocus' && config.serverUrl) {
 		return createHocuspocusProvider(config.serverUrl);
 	}
-	return createPartyKitProvider();
+	const password = getRoomPassword();
+	return createPartyKitProvider(password ?? undefined);
 }
 
 export function getSyncStatus(): SyncStatus {
@@ -32,18 +34,30 @@ export function getRoomCode(): string | null {
 	return localStorage.getItem(ROOM_KEY);
 }
 
+export function getRoomPassword(): string | null {
+	return localStorage.getItem(ROOM_PASSWORD_KEY);
+}
+
 export function onSyncStatusChange(cb: (status: SyncStatus) => void): () => void {
 	listeners.add(cb);
 	return () => listeners.delete(cb);
 }
 
-export function createRoom(): string {
+export function createRoom(password?: string): string {
 	const code = generateRoomCode();
+	if (password) {
+		localStorage.setItem(ROOM_PASSWORD_KEY, password);
+	} else {
+		localStorage.removeItem(ROOM_PASSWORD_KEY);
+	}
 	connectToRoom(code);
 	return code;
 }
 
-export function joinRoom(code: string): void {
+export function joinRoom(code: string, password?: string): void {
+	if (password) {
+		localStorage.setItem(ROOM_PASSWORD_KEY, password);
+	}
 	connectToRoom(code);
 }
 
@@ -55,6 +69,7 @@ export function leaveRoom(): void {
 	currentRoomCode = null;
 	currentStatus = 'disconnected';
 	localStorage.removeItem(ROOM_KEY);
+	localStorage.removeItem(ROOM_PASSWORD_KEY);
 	notifyListeners();
 }
 
