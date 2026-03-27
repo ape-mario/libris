@@ -1,5 +1,80 @@
 import { q, type Book, type UserBookData } from '$lib/db';
 
+export interface YearInReview {
+	year: number;
+	totalRead: number;
+	totalPages: number;
+	averageRating: number;
+	topGenre: string | null;
+	topAuthor: string | null;
+	shortestBook: { title: string; pages: number } | null;
+	longestBook: { title: string; pages: number } | null;
+	fastestRead: { title: string; days: number } | null;
+	booksPerMonth: { month: string; count: number }[];
+	ratingDistribution: number[];
+	favoriteBook: { title: string; rating: number } | null;
+}
+
+export function getYearInReview(userId: string, year: number): YearInReview | null {
+	const stats = getReadingStats(userId, year);
+	if (stats.totalRead === 0) return null;
+
+	const allBooks = q.getAll<Book>('books');
+	const userData = q.filter<UserBookData>('userBookData', (d) => d.userId === userId && d.status === 'read');
+	const userBookMap = new Map(allBooks.map(b => [b.id, b]));
+
+	// Filter to this year's reads
+	const yearReads = userData.filter(ud => {
+		if (!ud.dateRead) return false;
+		const readYear = parseInt(ud.dateRead.slice(0, 4));
+		return readYear === year;
+	});
+
+	// Shortest/longest by pages
+	const withPages = yearReads
+		.filter(ud => ud.totalPages && ud.totalPages > 0)
+		.map(ud => ({ title: userBookMap.get(ud.bookId)?.title || '?', pages: ud.totalPages! }));
+	withPages.sort((a, b) => a.pages - b.pages);
+
+	// Fastest read (dateStarted → dateRead)
+	let fastestRead: YearInReview['fastestRead'] = null;
+	for (const ud of yearReads) {
+		if (!ud.dateStarted || !ud.dateRead) continue;
+		const start = new Date(ud.dateStarted).getTime();
+		const end = new Date(ud.dateRead).getTime();
+		const days = Math.max(1, Math.round((end - start) / 86400000));
+		const title = userBookMap.get(ud.bookId)?.title || '?';
+		if (!fastestRead || days < fastestRead.days) {
+			fastestRead = { title, days };
+		}
+	}
+
+	// Favorite book (highest rated)
+	let favoriteBook: YearInReview['favoriteBook'] = null;
+	for (const ud of yearReads) {
+		if (!ud.rating) continue;
+		const title = userBookMap.get(ud.bookId)?.title || '?';
+		if (!favoriteBook || ud.rating > favoriteBook.rating) {
+			favoriteBook = { title, rating: ud.rating };
+		}
+	}
+
+	return {
+		year,
+		totalRead: stats.totalRead,
+		totalPages: stats.totalPages,
+		averageRating: stats.averageRating,
+		topGenre: stats.genreBreakdown[0]?.name || null,
+		topAuthor: stats.topAuthors[0]?.name || null,
+		shortestBook: withPages[0] || null,
+		longestBook: withPages[withPages.length - 1] || null,
+		fastestRead,
+		booksPerMonth: stats.booksPerMonth,
+		ratingDistribution: stats.ratingDistribution,
+		favoriteBook
+	};
+}
+
 export interface ReadingStats {
 	totalBooks: number;
 	totalRead: number;

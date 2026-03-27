@@ -5,6 +5,7 @@
   import { getGoal, setGoal, getBooksReadThisYear } from '$lib/services/goals';
   import { getRecommendations, type Recommendation } from '$lib/services/recommendations';
   import { q } from '$lib/db';
+  import { base } from '$app/paths';
   import { t } from '$lib/i18n/index.svelte';
 
   let user = $derived(getCurrentUser());
@@ -388,6 +389,21 @@
             </div>
           {/each}
         </div>
+      </div>
+    {/if}
+
+    <!-- Year in Review -->
+    {#if !isAllTime && stats.totalRead > 0}
+      <div class="mb-8">
+        <a href="{base}/review/{selectedYear}" class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow group block">
+          <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent/20 transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="font-display text-sm font-semibold text-ink">{t('review.cta', { year: selectedYear.toString() })}</div>
+            <div class="text-xs text-ink-muted">{t('review.cta_desc')}</div>
+          </div>
+        </a>
       </div>
     {/if}
 
