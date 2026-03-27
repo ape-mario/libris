@@ -47,7 +47,7 @@ function csvEscape(value: string): string {
 
 export function exportCSV(userId: string): string {
 	const books = q.getAll<Book>('books');
-	const headers = ['Title', 'Authors', 'ISBN', 'Publisher', 'Publish Year', 'Edition', 'Categories', 'Tags', 'Date Added', 'Date Started', 'Date Read', 'Status', 'Rating', 'Notes'];
+	const headers = ['Title', 'Authors', 'ISBN', 'Publisher', 'Publish Year', 'Edition', 'Categories', 'Tags', 'Date Added', 'Date Started', 'Date Read', 'Status', 'Rating', 'Notes', 'DNF Reason', 'DNF Page'];
 	const rows = books.map((book) => {
 		const ubd = getUserBookData(userId, book.id);
 		return [
@@ -64,7 +64,9 @@ export function exportCSV(userId: string): string {
 			ubd?.dateRead || '',
 			ubd?.status || 'unread',
 			ubd?.rating?.toString() || '',
-			ubd?.notes || ''
+			ubd?.notes || '',
+			ubd?.dnfReason || '',
+			ubd?.dnfPage?.toString() || ''
 		].map(csvEscape).join(',');
 	});
 	return [headers.join(','), ...rows].join('\n');
@@ -90,7 +92,9 @@ export async function exportXLSX(userId: string): Promise<Blob> {
 			'Date Read': ubd?.dateRead || '',
 			Status: ubd?.status || 'unread',
 			Rating: ubd?.rating || '',
-			Notes: ubd?.notes || ''
+			Notes: ubd?.notes || '',
+			'DNF Reason': ubd?.dnfReason || '',
+			'DNF Page': ubd?.dnfPage || ''
 		};
 	});
 
@@ -146,8 +150,10 @@ export async function importXLSX(file: ArrayBuffer, userId: string): Promise<num
 			const dateRead = (row['Date Read'] || '').trim() || undefined;
 			const dateStarted = (row['Date Started'] || '').trim() || undefined;
 			const tags = (row['Tags'] || '').split(';').map(t => t.trim().toLowerCase()).filter(Boolean);
+			const dnfReason = (row['DNF Reason'] || '').trim() || undefined;
+			const dnfPage = parseInt(row['DNF Page'] || '0') || undefined;
 
-			if (status || rating || notes || dateStarted || tags.length > 0) {
+			if (status || rating || notes || dateStarted || tags.length > 0 || dnfReason) {
 				const validStatus = ['read', 'reading', 'unread', 'dnf'].includes(status) ? status as 'read' | 'reading' | 'unread' | 'dnf' : 'unread';
 				const key = `${userId}:${book.id}`;
 				q.setItem('userBookData', key, {
@@ -159,6 +165,8 @@ export async function importXLSX(file: ArrayBuffer, userId: string): Promise<num
 					tags: tags.length > 0 ? tags : undefined,
 					dateStarted: validStatus === 'reading' ? (dateStarted || new Date().toISOString()) : dateStarted,
 					dateRead: validStatus === 'read' ? (dateRead || new Date().toISOString()) : undefined,
+					dnfReason: validStatus === 'dnf' ? dnfReason : undefined,
+					dnfPage: validStatus === 'dnf' ? dnfPage : undefined,
 					isWishlist: false
 				});
 			}

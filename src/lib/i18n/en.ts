@@ -208,6 +208,11 @@ export default {
   'scanner.error': 'Camera access denied or not available',
 
   // Reading progress
+  'book.dnf': 'Did Not Finish',
+  'book.dnf.reason': 'Reason',
+  'book.dnf.reason_placeholder': 'Why did you stop reading this book?',
+  'book.dnf.stopped_at': 'Stopped at page',
+  'book.dnf.page_placeholder': 'e.g. 120',
   'book.date_read': 'Date Read',
   'book.date_read.precision': 'Precision',
   'book.date_read.exact': 'Exact date',

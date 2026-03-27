@@ -39,6 +39,9 @@ export interface UserBookData {
   acquiredFrom?: string;
   acquiredPrice?: string;
   acquiredDate?: string;
+  // DNF details
+  dnfReason?: string;
+  dnfPage?: number;
   // Quotes/highlights
   quotes?: { text: string; page?: number; note?: string }[];
   // Re-read history

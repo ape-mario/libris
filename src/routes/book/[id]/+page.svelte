@@ -739,6 +739,34 @@
         </div>
       {/if}
 
+      {#if userData?.status === 'dnf'}
+        <div class="mb-6 animate-fade-up">
+          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.dnf')}</h2>
+          <div class="card p-4 flex flex-col gap-3">
+            <label class="flex flex-col gap-1">
+              <span class="text-xs text-ink-muted">{t('book.dnf.reason')}</span>
+              <textarea
+                class="input-field resize-none h-16 text-sm"
+                placeholder={t('book.dnf.reason_placeholder')}
+                value={userData?.dnfReason || ''}
+                onblur={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dnfReason: (e.target as HTMLTextAreaElement).value || undefined }); }}
+              ></textarea>
+            </label>
+            <label class="flex flex-col gap-1 w-40">
+              <span class="text-xs text-ink-muted">{t('book.dnf.stopped_at')}</span>
+              <input
+                type="number"
+                min="1"
+                value={userData?.dnfPage || ''}
+                onblur={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dnfPage: parseInt((e.target as HTMLInputElement).value) || undefined }); }}
+                class="input-field !py-1.5 text-sm"
+                placeholder={t('book.dnf.page_placeholder')}
+              />
+            </label>
+          </div>
+        </div>
+      {/if}
+
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.notes')}</h2>
         <textarea

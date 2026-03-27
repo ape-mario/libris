@@ -208,6 +208,11 @@ export default {
   'scanner.error': 'Akses kamera ditolak atau tidak tersedia',
 
   // Reading progress
+  'book.dnf': 'Berhenti Membaca',
+  'book.dnf.reason': 'Alasan',
+  'book.dnf.reason_placeholder': 'Kenapa berhenti membaca buku ini?',
+  'book.dnf.stopped_at': 'Berhenti di halaman',
+  'book.dnf.page_placeholder': 'cth. 120',
   'book.date_read': 'Tanggal Selesai Baca',
   'book.date_read.precision': 'Ketepatan',
   'book.date_read.exact': 'Tanggal tepat',
