@@ -36,6 +36,15 @@ export async function searchOpenLibrary(query: string): Promise<OpenLibraryResul
 }
 
 export async function lookupByISBN(isbn: string): Promise<OpenLibraryResult | null> {
+  // Try Open Library first
+  const olResult = await lookupByISBN_OpenLibrary(isbn);
+  if (olResult) return olResult;
+
+  // Fallback to Google Books API (better coverage for non-English books)
+  return lookupByISBN_GoogleBooks(isbn);
+}
+
+async function lookupByISBN_OpenLibrary(isbn: string): Promise<OpenLibraryResult | null> {
   const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`;
 
   try {
@@ -58,6 +67,35 @@ export async function lookupByISBN(isbn: string): Promise<OpenLibraryResult | nu
       coverUrl: entry.cover?.medium,
       publishYear: entry.publish_date ? parseInt(entry.publish_date) : undefined,
       publisher: (entry.publishers || [])[0]?.name
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function lookupByISBN_GoogleBooks(isbn: string): Promise<OpenLibraryResult | null> {
+  const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const item = data.items?.[0]?.volumeInfo;
+    if (!item) return null;
+
+    return {
+      title: item.title || 'Unknown',
+      authors: item.authors || [],
+      isbn,
+      coverUrl: item.imageLinks?.thumbnail?.replace('http://', 'https://') || undefined,
+      publishYear: item.publishedDate ? parseInt(item.publishedDate) : undefined,
+      publisher: item.publisher || undefined
     };
   } catch {
     return null;
