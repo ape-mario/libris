@@ -201,7 +201,12 @@ export default {
   'toast.sync_joined': 'Joined room',
   'toast.sync_left': 'Left room',
   'toast.sync_invalid_code': 'Invalid room code',
+  'toast.sync_wrong_password': 'Wrong room password',
   'toast.export_failed': 'Export failed',
+  'settings.sync_password': 'Room Password',
+  'settings.sync_password_placeholder': 'Optional — leave empty for open room',
+  'settings.sync_password_hint': 'Only people with the password can join this room.',
+  'settings.sync_protected': 'Protected',
 
   // Scanner
   'scanner.hint': 'Point your camera at the book\'s barcode',

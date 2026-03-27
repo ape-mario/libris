@@ -201,7 +201,12 @@ export default {
   'toast.sync_joined': 'Bergabung ke ruang',
   'toast.sync_left': 'Keluar dari ruang',
   'toast.sync_invalid_code': 'Kode ruang tidak valid',
+  'toast.sync_wrong_password': 'Kata sandi room salah',
   'toast.export_failed': 'Ekspor gagal',
+  'settings.sync_password': 'Kata Sandi Room',
+  'settings.sync_password_placeholder': 'Opsional — kosongkan untuk room terbuka',
+  'settings.sync_password_hint': 'Hanya orang dengan kata sandi yang bisa bergabung.',
+  'settings.sync_protected': 'Dilindungi',
 
   // Scanner
   'scanner.hint': 'Arahkan kamera ke barcode buku',

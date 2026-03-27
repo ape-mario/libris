@@ -35,6 +35,8 @@
   let selectedProvider = $state<ProviderType>('partykit');
   let serverUrl = $state('');
   let showJoinInput = $state(false);
+  let roomPassword = $state('');
+  let joinPassword = $state('');
   let unsubSync: (() => void) | null = null;
 
   onMount(() => {
@@ -79,8 +81,9 @@
   }
 
   function handleCreateRoom() {
-    const code = createRoom();
+    const code = createRoom(roomPassword || undefined);
     roomCode = code;
+    roomPassword = '';
     showToast(t('toast.sync_joined'), 'success');
   }
 
@@ -90,9 +93,10 @@
       showToast(t('toast.sync_invalid_code'), 'error');
       return;
     }
-    joinRoom(input);
+    joinRoom(input, joinPassword || undefined);
     roomCode = input;
     joinInput = '';
+    joinPassword = '';
     showJoinInput = false;
     showToast(t('toast.sync_joined'), 'success');
   }
@@ -335,7 +339,7 @@
           <div class="flex items-center gap-3 bg-warm-50 rounded-xl p-3">
             <div class="flex-1">
               <span class="text-xs text-ink-muted uppercase tracking-wider font-semibold">{t('settings.sync_room_code')}</span>
-              <p class="font-mono text-lg font-bold text-ink tracking-widest mt-0.5">{roomCode}</p>
+              <p class="font-mono text-lg font-bold text-ink tracking-widest mt-0.5">{roomCode}{#if getRoomPassword()}<span class="text-xs text-sage font-medium ml-2">🔒 {t('settings.sync_protected')}</span>{/if}</p>
             </div>
             <button
               class="btn-secondary !py-1.5 !px-3 !text-xs"
@@ -352,6 +356,13 @@
       {:else}
         <!-- Not in a room -->
         <div class="flex flex-col gap-3">
+          <label class="flex flex-col gap-1.5 mb-3">
+            <span class="text-xs text-ink-muted">{t('settings.sync_password')}</span>
+            <input type="password" bind:value={roomPassword}
+              placeholder={t('settings.sync_password_placeholder')}
+              class="input-field !py-1.5 text-sm" />
+          </label>
+          <p class="text-[11px] text-warm-400 mb-3">{t('settings.sync_password_hint')}</p>
           <div class="flex gap-2">
             <button class="btn-primary flex-1" onclick={handleCreateRoom}>
               {t('settings.sync_create_room')}
@@ -362,17 +373,22 @@
           </div>
 
           {#if showJoinInput}
-            <form class="flex gap-2 animate-fade-up" onsubmit={(e) => { e.preventDefault(); handleJoinRoom(); }}>
-              <input
-                type="text"
-                bind:value={joinInput}
-                placeholder={t('settings.sync_room_code_placeholder')}
-                class="input-field flex-1 font-mono text-center tracking-widest uppercase"
-                maxlength="9"
-              />
-              <button type="submit" class="btn-primary"
-                disabled={joinInput.replace(/-/g, '').length !== 8}
-              >{t('settings.sync_join_room')}</button>
+            <form class="flex flex-col gap-2 animate-fade-up" onsubmit={(e) => { e.preventDefault(); handleJoinRoom(); }}>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  bind:value={joinInput}
+                  placeholder={t('settings.sync_room_code_placeholder')}
+                  class="input-field flex-1 font-mono text-center tracking-widest uppercase"
+                  maxlength="9"
+                />
+                <button type="submit" class="btn-primary"
+                  disabled={joinInput.replace(/-/g, '').length !== 8}
+                >{t('settings.sync_join_room')}</button>
+              </div>
+              <input type="password" bind:value={joinPassword}
+                placeholder={t('settings.sync_password')}
+                class="input-field !py-1.5 text-sm" />
             </form>
           {/if}
         </div>
