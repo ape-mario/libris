@@ -209,8 +209,16 @@ export default {
   'settings.sync_protected': 'Protected',
 
   // Scanner
+  'scanner.photo_mode': 'Photo Barcode',
+  'scanner.photo_desc': 'Take a photo of the barcode (recommended)',
+  'scanner.live_mode': 'Live Scan',
+  'scanner.live_desc': 'Scan barcode in real-time',
   'scanner.loading': 'Opening camera...',
-  'scanner.hint': 'Align barcode within the frame',
+  'scanner.processing': 'Reading barcode...',
+  'scanner.no_barcode': 'No barcode detected. Try a closer, clearer photo.',
+  'scanner.use_photo': 'This browser does not support live scanning. Use photo mode.',
+  'scanner.switch_photo': 'Use photo',
+  'scanner.hint': 'Make sure the barcode is clearly visible',
   'scanner.error': 'Camera access denied or not available',
 
   // Reading progress

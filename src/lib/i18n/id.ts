@@ -209,8 +209,16 @@ export default {
   'settings.sync_protected': 'Dilindungi',
 
   // Scanner
+  'scanner.photo_mode': 'Foto Barcode',
+  'scanner.photo_desc': 'Ambil foto barcode pakai kamera (direkomendasikan)',
+  'scanner.live_mode': 'Scan Langsung',
+  'scanner.live_desc': 'Scan barcode secara real-time',
   'scanner.loading': 'Membuka kamera...',
-  'scanner.hint': 'Arahkan barcode ke dalam bingkai',
+  'scanner.processing': 'Membaca barcode...',
+  'scanner.no_barcode': 'Barcode tidak terdeteksi. Coba foto ulang lebih dekat.',
+  'scanner.use_photo': 'Browser ini tidak mendukung scan langsung. Gunakan mode foto.',
+  'scanner.switch_photo': 'Pakai foto',
+  'scanner.hint': 'Pastikan barcode terlihat jelas dan tidak tertutup',
   'scanner.error': 'Akses kamera ditolak atau tidak tersedia',
 
   // Reading progress
