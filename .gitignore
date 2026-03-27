@@ -22,5 +22,9 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Native (Capacitor) — private, not pushed
+/android
+/ios
+
 # Internal docs (not for public)
 docs/libris-ecosystem-ideas.md
