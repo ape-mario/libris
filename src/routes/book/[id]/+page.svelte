@@ -552,7 +552,7 @@
               {@const maxPage = userData.totalPages || Math.max(...history.map(h => h.page))}
               {@const points = history.map((h, i) => `${(i / (history.length - 1)) * 100},${100 - (h.page / maxPage) * 100}`).join(' ')}
               <div class="mt-3">
-                <p class="text-[10px] text-warm-400 mb-1">{t('book.progress.history')}</p>
+                <p class="text-xs text-ink-muted mb-1">{t('book.progress.history')}</p>
                 <svg viewBox="0 0 100 100" class="w-full h-12" preserveAspectRatio="none">
                   <polyline
                     points={points}

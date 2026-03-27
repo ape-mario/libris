@@ -305,7 +305,7 @@
         <div class="text-xs text-ink-muted uppercase tracking-wider mt-1">{t('stats.avg_rating')}</div>
       </div>
       <div class="card p-4 text-center">
-        <div class="font-display text-2xl font-bold text-warm-600">{stats.totalPages > 0 ? stats.totalPages.toLocaleString() : '—'}</div>
+        <div class="font-display text-2xl font-bold text-gold">{stats.totalPages > 0 ? stats.totalPages.toLocaleString() : '—'}</div>
         <div class="text-xs text-ink-muted uppercase tracking-wider mt-1">{t('stats.pages_read')}</div>
       </div>
     </div>

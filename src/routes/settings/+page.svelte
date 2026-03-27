@@ -259,7 +259,7 @@
   <div class="space-y-4">
     <!-- Language -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-3">{t('settings.language')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.language')}</h2>
       <div class="flex gap-2">
         <button
           class="tab-pill {locale === 'en' ? 'tab-pill-active' : 'tab-pill-inactive'}"
@@ -274,7 +274,7 @@
 
     <!-- Theme -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-3">{t('settings.theme')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.theme')}</h2>
       <div class="flex gap-2">
         {#each [
           { key: 'light', label: t('settings.theme.light'), icon: '☀' },
@@ -291,7 +291,7 @@
 
     <!-- Device Sync -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.sync_title')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.sync_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.sync_desc')}</p>
 
       <!-- Provider selection -->
@@ -380,7 +380,7 @@
 
     <!-- Goodreads Import -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.goodreads_title')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.goodreads_title')}</h2>
       <p class="text-sm text-ink-muted mb-2">{t('settings.goodreads_desc')}</p>
       <p class="text-[11px] text-warm-400 mb-4 font-mono">{t('settings.goodreads_help')}</p>
       <input type="file" accept=".csv" onchange={handleGoodreads} disabled={importingGoodreads}
@@ -389,7 +389,7 @@
 
     <!-- Cover Cache -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.cache_title')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.cache_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.cache_desc')}</p>
       <button class="btn-secondary" onclick={handleClearCache}>
         {t('settings.cache_clear')}
@@ -398,7 +398,7 @@
 
     <!-- Export -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.export_title')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.export_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.export_desc')}</p>
       <div class="flex gap-2">
         <button class="btn-primary" onclick={handleExport} disabled={exporting}>
@@ -415,7 +415,7 @@
 
     <!-- Import -->
     <div class="card p-5">
-      <h2 class="font-display font-semibold text-ink mb-1">{t('settings.import_title')}</h2>
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.import_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.import_desc')}</p>
       <div class="flex flex-col gap-3">
         <div>

@@ -40,7 +40,7 @@
   <div class="fixed inset-0 z-[200] flex items-center justify-center p-6 dialog-backdrop">
     <button class="absolute inset-0 bg-ink/30 backdrop-blur-sm border-none cursor-default" onclick={cancelDialog} aria-label="Close dialog"></button>
 
-    <div bind:this={dialogEl} class="relative bg-cream rounded-2xl shadow-2xl w-full max-w-sm p-6 dialog-content" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div bind:this={dialogEl} class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 dialog-content" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
       <h2 id="dialog-title" class="font-display text-lg font-bold text-ink">{dialog.title}</h2>
       {#if dialog.message}
         <p class="text-sm text-ink-muted mt-1.5 leading-relaxed">{dialog.message}</p>

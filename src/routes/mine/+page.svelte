@@ -187,7 +187,7 @@
           <path d="M56 28 C56 24, 60 22, 62 26 C64 22, 68 24, 68 28 C68 33, 62 37, 62 37 C62 37, 56 33, 56 28Z" style="fill: var(--color-accent); opacity: 0.3"/>
         </svg>
       </div>
-      <p class="text-sm text-ink-muted">{t('mine.empty')}</p>
+      <p class="font-display text-lg text-ink-light mb-1">{t('mine.empty')}</p>
     </div>
   {:else if tab === 'timeline'}
     {#if timelineGroups.length === 0}

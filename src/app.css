@@ -250,8 +250,21 @@ html.dark .group:hover .book-cover-shadow {
   letter-spacing: 0.02em;
   transition: all 0.2s;
 }
-.btn-primary:hover {
+.btn-primary-sm {
+  padding: 0.5rem 1rem;
+  border-radius: 0.625rem;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+}
+.btn-primary:hover, .btn-primary-sm:hover {
   background: var(--color-ink-light);
+}
+.btn-primary-sm:active {
+  transform: scale(0.97);
 }
 .btn-primary:disabled {
   opacity: 0.5;

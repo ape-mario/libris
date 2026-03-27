@@ -121,7 +121,7 @@
       {#each shelves as shelf, i}
         <div class="animate-fade-up" style="animation-delay: {i * 40}ms">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="font-display text-base font-semibold text-ink">{shelf.name}</h2>
+            <h2 class="text-sm font-semibold text-ink">{shelf.name}</h2>
             <div class="flex items-center gap-3">
               <span class="text-xs text-ink-muted">{shelf.books.length}</span>
               <button

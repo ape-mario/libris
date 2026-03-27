@@ -420,7 +420,7 @@
             {/if}
           </div>
         {/if}
-        <button class="tab-pill !py-1 !px-2.5 !text-[10px] tab-pill-inactive !text-warm-400" onclick={clearSelection}>✕</button>
+        <button class="text-xs text-ink-muted hover:text-ink ml-1" onclick={clearSelection}>✕</button>
       </div>
     </div>
   </div>
