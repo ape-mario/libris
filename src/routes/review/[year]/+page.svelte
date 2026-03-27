@@ -44,7 +44,7 @@
   {:else}
     <!-- Hero -->
     <div class="text-center mb-8">
-      <p class="text-xs font-semibold text-accent uppercase tracking-widest mb-2">{t('review.title')}</p>
+      <p class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">{t('review.title')}</p>
       <h1 class="font-display text-5xl font-bold text-ink tracking-tight">{year}</h1>
     </div>
 

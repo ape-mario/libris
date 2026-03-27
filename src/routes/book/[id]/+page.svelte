@@ -620,7 +620,7 @@
                       {/if}
                     </div>
                   </div>
-                  <button class="text-warm-400 hover:text-berry transition-colors flex-shrink-0 text-xs" onclick={() => removeReread(i)}>&times;</button>
+                  <button class="w-7 h-7 flex items-center justify-center rounded-lg text-warm-400 hover:text-berry hover:bg-berry/10 transition-colors flex-shrink-0 text-sm" onclick={() => removeReread(i)}>&times;</button>
                 </div>
               {/each}
             </div>
@@ -648,7 +648,7 @@
                 </label>
               </div>
               <div class="flex gap-2">
-                <button class="btn-secondary text-sm" onclick={saveReread}>{t('book.quotes.save')}</button>
+                <button class="btn-primary-sm" onclick={saveReread}>{t('book.quotes.save')}</button>
                 <button class="btn-secondary text-sm" onclick={() => { addingReread = false; rereadStarted = ''; rereadFinished = ''; rereadRating = ''; rereadNotes = ''; }}>{t('book.quotes.cancel')}</button>
               </div>
             </div>
@@ -661,12 +661,14 @@
       {#if userData?.status === 'reading'}
         <div class="mb-6 animate-fade-up">
           <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.date_started')}</h2>
-          <input
-            type="date"
-            value={userData?.dateStarted?.slice(0, 10) || ''}
-            onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateStarted: (e.target as HTMLInputElement).value || undefined }); }}
-            class="input-field !py-1.5 text-sm w-auto"
-          />
+          <div class="card p-4">
+            <input
+              type="date"
+              value={userData?.dateStarted?.slice(0, 10) || ''}
+              onchange={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dateStarted: (e.target as HTMLInputElement).value || undefined }); }}
+              class="input-field !py-1.5 text-sm w-auto"
+            />
+          </div>
         </div>
         <div class="mb-6 animate-fade-up">
           <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.progress')}</h2>
@@ -792,7 +794,7 @@
                       {#if quote.note}<span class="text-xs text-ink-muted">{quote.note}</span>{/if}
                     </div>
                   </div>
-                  <button class="text-warm-400 hover:text-berry transition-colors flex-shrink-0 text-xs" onclick={() => removeQuote(i)}>&times;</button>
+                  <button class="w-7 h-7 flex items-center justify-center rounded-lg text-warm-400 hover:text-berry hover:bg-berry/10 transition-colors flex-shrink-0 text-sm" onclick={() => removeQuote(i)}>&times;</button>
                 </div>
               </div>
             {/each}
@@ -816,7 +818,7 @@
               </label>
             </div>
             <div class="flex gap-2">
-              <button class="btn-secondary text-sm" onclick={saveQuote}>{t('book.quotes.save')}</button>
+              <button class="btn-primary-sm" onclick={saveQuote}>{t('book.quotes.save')}</button>
               <button class="btn-secondary text-sm" onclick={() => { addingQuote = false; newQuoteText = ''; newQuotePage = ''; newQuoteNote = ''; }}>{t('book.quotes.cancel')}</button>
             </div>
           </div>

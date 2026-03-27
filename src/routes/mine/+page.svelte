@@ -207,7 +207,7 @@
                   class="card flex items-center gap-3 p-3 text-left hover:shadow-md transition-shadow w-full"
                   onclick={() => goto(`${base}/book/${item.bookId}`)}
                 >
-                  <div class="w-9 h-[3.25rem] rounded overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
+                  <div class="w-10 h-14 rounded overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
                     {#if item.book.coverUrl}
                       <img src={item.book.coverUrl} alt={item.book.title} class="w-full h-full object-cover" />
                     {/if}
@@ -231,7 +231,7 @@
       <div class="flex flex-col gap-2">
         {#each books as item, i}
           <button
-            class="card flex items-center gap-4 p-4 text-left hover:shadow-md transition-shadow w-full animate-fade-up"
+            class="card flex items-center gap-3 p-3 text-left hover:shadow-md transition-shadow w-full animate-fade-up"
             style="animation-delay: {i * 40}ms"
             onclick={() => goto(`${base}/book/${item.bookId}`)}
           >
