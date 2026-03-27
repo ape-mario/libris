@@ -11,7 +11,8 @@
   import { getLocale } from '$lib/i18n/index.svelte';
   import { cacheAllCovers } from '$lib/services/coverCache';
   import { initTheme } from '$lib/stores/theme.svelte';
-  import { initDoc } from '$lib/db';
+  import { initDoc, isDocEmpty } from '$lib/db';
+  import OnboardingWizard from '$lib/components/OnboardingWizard.svelte';
   import { page } from '$app/state';
 
   let { children } = $props();
@@ -25,6 +26,7 @@
   let showInstallBanner = $state(false);
   let pwaHandler: ((e: Event) => void) | null = null;
   let showScrollTop = $state(false);
+  let showOnboarding = $state(false);
 
   function dismissInstall() {
     showInstallBanner = false;
@@ -115,6 +117,12 @@
 
     restoreUser();
     loaded = true;
+
+    // Show onboarding wizard if collection is empty and not previously dismissed
+    if (isDocEmpty() && !localStorage.getItem('libris_onboarding_done')) {
+      showOnboarding = true;
+    }
+
     setTimeout(() => cacheAllCovers(), 3000);
   });
 
@@ -144,6 +152,9 @@
 {:else if !user}
   <ProfilePicker />
 {:else}
+  {#if showOnboarding}
+    <OnboardingWizard onComplete={() => { showOnboarding = false; localStorage.setItem('libris_onboarding_done', '1'); }} />
+  {/if}
   {#if showInstallBanner}
     <div class="fixed top-0 left-0 right-0 z-50 bg-accent text-cream px-4 py-2.5 flex items-center gap-3 animate-fade-up">
       <div class="flex-1 min-w-0">

@@ -413,6 +413,18 @@
       </button>
     </div>
 
+    <!-- Setup Wizard -->
+    <div class="card p-5">
+      <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.onboarding')}</h2>
+      <p class="text-sm text-ink-muted mb-4">{t('settings.onboarding_desc')}</p>
+      <button class="btn-secondary" onclick={() => {
+        localStorage.removeItem('libris_onboarding_done');
+        window.location.href = base || '/';
+      }}>
+        {t('settings.onboarding')}
+      </button>
+    </div>
+
     <!-- Export -->
     <div class="card p-5">
       <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('settings.export_title')}</h2>
