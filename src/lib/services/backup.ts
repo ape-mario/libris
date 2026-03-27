@@ -1,6 +1,7 @@
 import { q, type Book, type UserBookData, type User, type Series, type Shelf } from '$lib/db';
 import { getCoverBase64, setCoverBase64 } from './coverCache';
 import { getUserBookData } from './userbooks';
+import { findSimilarBooks, hasBookWithISBN, addBook } from './books';
 
 export async function exportData(): Promise<string> {
 	const users = q.getAll<User>('users');
@@ -65,6 +66,100 @@ export function exportCSV(userId: string): string {
 		].map(csvEscape).join(',');
 	});
 	return [headers.join(','), ...rows].join('\n');
+}
+
+export async function exportXLSX(userId: string): Promise<Blob> {
+	const XLSX = await import('xlsx');
+	const books = q.getAll<Book>('books');
+
+	const rows = books.map((book) => {
+		const ubd = getUserBookData(userId, book.id);
+		return {
+			Title: book.title,
+			Authors: (book.authors || []).join('; '),
+			ISBN: book.isbn || '',
+			Publisher: book.publisher || '',
+			'Publish Year': book.publishYear || '',
+			Edition: book.edition || '',
+			Categories: (book.categories || []).join('; '),
+			'Date Added': book.dateAdded,
+			Status: ubd?.status || 'unread',
+			Rating: ubd?.rating || '',
+			'Date Read': ubd?.dateRead || '',
+			Notes: ubd?.notes || ''
+		};
+	});
+
+	const ws = XLSX.utils.json_to_sheet(rows);
+	const wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, ws, 'Books');
+
+	const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+	return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+export async function importXLSX(file: ArrayBuffer, userId: string): Promise<number> {
+	const XLSX = await import('xlsx');
+	const wb = XLSX.read(file, { type: 'array' });
+	const ws = wb.Sheets[wb.SheetNames[0]];
+	if (!ws) throw new Error('Empty spreadsheet');
+
+	const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
+	if (rows.length === 0) throw new Error('No data rows');
+
+	let imported = 0;
+
+	for (const row of rows) {
+		const title = (row['Title'] || '').trim();
+		if (!title) continue;
+
+		const isbn = (row['ISBN'] || '').replace(/[^0-9Xx]/g, '').trim() || undefined;
+
+		// Skip duplicates (same logic as Goodreads import)
+		if (isbn && hasBookWithISBN(isbn)) continue;
+		if (findSimilarBooks(title).length > 0) continue;
+
+		const authors = (row['Authors'] || '').split(';').map(a => a.trim()).filter(Boolean);
+		const categories = (row['Categories'] || '').split(';').map(c => c.trim().toLowerCase()).filter(Boolean);
+		const publishYear = parseInt(row['Publish Year'] || '0') || undefined;
+
+		const book = addBook({
+			title,
+			authors,
+			isbn,
+			publisher: (row['Publisher'] || '').trim() || undefined,
+			publishYear,
+			edition: (row['Edition'] || '').trim() || undefined,
+			categories,
+			coverUrl: isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg` : undefined
+		}, true);
+
+		if (book) {
+			// Set user book data if status/rating provided
+			const status = (row['Status'] || '').trim().toLowerCase();
+			const rating = parseInt(row['Rating'] || '0') || undefined;
+			const notes = (row['Notes'] || '').trim() || undefined;
+			const dateRead = (row['Date Read'] || '').trim() || undefined;
+
+			if (status || rating || notes) {
+				const validStatus = ['read', 'reading', 'unread', 'dnf'].includes(status) ? status as 'read' | 'reading' | 'unread' | 'dnf' : 'unread';
+				const key = `${userId}:${book.id}`;
+				q.setItem('userBookData', key, {
+					userId,
+					bookId: book.id,
+					status: validStatus,
+					rating,
+					notes,
+					dateRead: validStatus === 'read' ? (dateRead || new Date().toISOString()) : undefined,
+					isWishlist: false
+				});
+			}
+
+			imported++;
+		}
+	}
+
+	return imported;
 }
 
 export async function importData(json: string): Promise<void> {

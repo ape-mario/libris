@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { exportData, importData, exportCSV } from '$lib/services/backup';
+  import { exportData, importData, exportCSV, exportXLSX, importXLSX } from '$lib/services/backup';
   import { importGoodreadsCSV } from '$lib/services/goodreads';
   import { showToast } from '$lib/stores/toast.svelte';
   import { clearCoverCache } from '$lib/services/coverCache';
@@ -158,6 +158,36 @@
     } catch {
       showToast(t('toast.export_failed'), 'error');
     }
+  }
+
+  async function handleExportXLSX() {
+    if (!user) return;
+    try {
+      const blob = await exportXLSX(user.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `libris-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(t('toast.exported'), 'success');
+    } catch {
+      showToast(t('toast.export_failed'), 'error');
+    }
+  }
+
+  async function handleImportXLSX(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !user) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const count = await importXLSX(buf, user.id);
+      showToast(t('toast.xlsx_imported', { count: count.toString() }), 'success');
+    } catch {
+      showToast(t('toast.xlsx_import_failed'), 'error');
+    }
+    input.value = '';
   }
 
   async function handleImport(e: Event) {
@@ -377,6 +407,9 @@
         <button class="btn-secondary" onclick={handleExportCSV}>
           {t('settings.export_csv')}
         </button>
+        <button class="btn-secondary" onclick={handleExportXLSX}>
+          {t('settings.export_xlsx')}
+        </button>
       </div>
     </div>
 
@@ -384,8 +417,18 @@
     <div class="card p-5">
       <h2 class="font-display font-semibold text-ink mb-1">{t('settings.import_title')}</h2>
       <p class="text-sm text-ink-muted mb-4">{t('settings.import_desc')}</p>
-      <input type="file" accept=".json" onchange={handleImport} disabled={importing}
-        class="text-sm text-ink-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-warm-100 file:text-ink-light file:font-medium file:text-xs file:cursor-pointer" />
+      <div class="flex flex-col gap-3">
+        <div>
+          <span class="text-xs text-ink-muted block mb-1">JSON</span>
+          <input type="file" accept=".json" onchange={handleImport} disabled={importing}
+            class="text-sm text-ink-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-warm-100 file:text-ink-light file:font-medium file:text-xs file:cursor-pointer" />
+        </div>
+        <div>
+          <span class="text-xs text-ink-muted block mb-1">XLSX</span>
+          <input type="file" accept=".xlsx,.xls" onchange={handleImportXLSX}
+            class="text-sm text-ink-muted file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-warm-100 file:text-ink-light file:font-medium file:text-xs file:cursor-pointer" />
+        </div>
+      </div>
     </div>
   </div>
 </div>
