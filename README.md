@@ -194,6 +194,57 @@ node index.js
 
 Di Settings, pilih **Self-hosted** → masukkan `wss://your-vps:1234` → Create/Join Room.
 
+## Mobile App (Android)
+
+Libris bisa dibuild sebagai native Android app menggunakan Capacitor. Web app yang sama dibungkus dalam native shell — feature parity 100%.
+
+### Prasyarat
+
+- [Android Studio](https://developer.android.com/studio) terinstall
+- Android SDK (otomatis terinstall bersama Android Studio)
+- Node >= 22
+
+### Build & Jalankan
+
+```sh
+# 1. Install dependencies (kalau belum)
+npm install
+
+# 2. Build web app
+npm run build
+
+# 3. Generate native project (kalau belum ada folder android/)
+npx cap add android
+
+# 4. Sync web assets ke native project
+npx cap sync android
+
+# 5. Buka di Android Studio
+npx cap open android
+```
+
+Di Android Studio, klik **Run** (▶) untuk jalankan di emulator atau HP yang tersambung USB.
+
+### Build APK untuk Sideload
+
+```sh
+cd android
+./gradlew assembleDebug
+```
+
+APK ada di `android/app/build/outputs/apk/debug/app-debug.apk`. Transfer ke HP dan install.
+
+### Build AAB untuk Play Store
+
+```sh
+cd android
+./gradlew bundleRelease
+```
+
+AAB ada di `android/app/build/outputs/bundle/release/app-release.aab`. Upload ke Google Play Console.
+
+> **Catatan:** Folder `android/` dan `ios/` di-gitignore karena berisi generated files. Bisa di-regenerate kapanpun dengan `npx cap add android && npx cap sync`.
+
 ## Lisensi
 
 [MIT](LICENSE)
