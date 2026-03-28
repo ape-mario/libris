@@ -212,14 +212,16 @@ export default {
   'settings.sync_protected': 'Dilindungi',
 
   // Scanner
-  'scanner.loading': 'Membuka kamera...',
   'scanner.processing': 'Membaca barcode...',
-  'scanner.no_barcode': 'Barcode tidak terdeteksi. Coba zoom lebih dekat atau nyalakan senter.',
-  'scanner.hint': 'Arahkan barcode ke bingkai, lalu tekan tombol putih',
+  'scanner.no_barcode': 'Barcode tidak terdeteksi. Pastikan foto jelas dan barcode terlihat penuh.',
+  'scanner.take_photo': 'Foto Barcode',
+  'scanner.take_photo_desc': 'Buka kamera, foto barcode di belakang buku',
+  'scanner.from_gallery': 'Pilih dari galeri',
+  'scanner.from_gallery_desc': 'Pilih foto barcode yang sudah ada',
   'scanner.type_isbn': 'Ketik ISBN manual',
   'scanner.manual_title': 'Masukkan ISBN',
   'scanner.manual_submit': 'Cari',
-  'scanner.back_camera': '← Kembali ke kamera',
+  'scanner.back_camera': '← Kembali',
   'scanner.error': 'Akses kamera ditolak atau tidak tersedia',
 
   // Reading progress

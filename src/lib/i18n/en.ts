@@ -212,14 +212,16 @@ export default {
   'settings.sync_protected': 'Protected',
 
   // Scanner
-  'scanner.loading': 'Opening camera...',
   'scanner.processing': 'Reading barcode...',
-  'scanner.no_barcode': 'No barcode detected. Try zooming in or turning on the torch.',
-  'scanner.hint': 'Point barcode at the frame, then tap the capture button',
+  'scanner.no_barcode': 'No barcode detected. Make sure the photo is clear and barcode is fully visible.',
+  'scanner.take_photo': 'Photo Barcode',
+  'scanner.take_photo_desc': 'Open camera, take a photo of the barcode on the book',
+  'scanner.from_gallery': 'Choose from gallery',
+  'scanner.from_gallery_desc': 'Select an existing barcode photo',
   'scanner.type_isbn': 'Type ISBN manually',
   'scanner.manual_title': 'Enter ISBN',
   'scanner.manual_submit': 'Search',
-  'scanner.back_camera': '← Back to camera',
+  'scanner.back_camera': '← Back',
   'scanner.error': 'Camera access denied or not available',
 
   // Reading progress
