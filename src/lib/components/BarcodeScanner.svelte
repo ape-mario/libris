@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
 
   let { onDetected, onError }: { onDetected: (code: string) => void; onError?: () => void } = $props();
@@ -31,6 +31,7 @@
     if (!scanner) return;
     error = '';
     scanning = true;
+    await tick(); // wait for DOM to render the scanner div
 
     try {
       await scanner.start(
