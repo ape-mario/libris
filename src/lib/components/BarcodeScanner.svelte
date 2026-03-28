@@ -162,22 +162,10 @@
       {t('scanner.stop_camera')}
     </button>
   {:else}
-    <button class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer w-full text-left" onclick={startCamera}>
+    <!-- 1. Photo (primary — native camera, always works) -->
+    <label class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
       <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-accent">
-          <rect x="2" y="4" width="20" height="16" rx="2"/>
-          <path d="M7 15V9"/><path d="M12 15V9"/><path d="M17 15V9"/>
-        </svg>
-      </div>
-      <div>
-        <p class="font-display text-sm font-semibold text-ink">{t('scanner.live_scan')}</p>
-        <p class="text-xs text-ink-muted">{t('scanner.live_scan_desc')}</p>
-      </div>
-    </button>
-
-    <label class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
-      <div class="w-12 h-12 rounded-xl bg-sage/10 flex items-center justify-center flex-shrink-0">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-sage">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
@@ -189,6 +177,7 @@
       <input type="file" accept="image/*" capture="environment" class="hidden" onchange={handleFileInput} />
     </label>
 
+    <!-- 2. Gallery -->
     <label class="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer">
       <div class="w-10 h-10 rounded-xl bg-warm-100 flex items-center justify-center text-warm-400 flex-shrink-0">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
@@ -200,8 +189,20 @@
       <input type="file" accept="image/*" class="hidden" onchange={handleFileInput} />
     </label>
 
-    <button class="text-center text-xs text-accent hover:text-accent-dark py-2" onclick={() => showManual = true}>
-      {t('scanner.type_isbn')}
+    <!-- 3. Manual ISBN -->
+    <button class="card p-4 flex items-center gap-4 hover:shadow-md transition-shadow w-full text-left" onclick={() => showManual = true}>
+      <div class="w-10 h-10 rounded-xl bg-warm-100 flex items-center justify-center text-warm-400 flex-shrink-0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium text-ink">{t('scanner.type_isbn')}</p>
+        <p class="text-xs text-ink-muted">{t('scanner.type_isbn_desc')}</p>
+      </div>
+    </button>
+
+    <!-- 4. Live scan (last — may be blurry on some phones) -->
+    <button class="text-center text-xs text-warm-400 hover:text-ink-muted py-1" onclick={startCamera}>
+      {t('scanner.live_scan')}
     </button>
   {/if}
 </div>
