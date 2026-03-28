@@ -362,6 +362,7 @@ export default {
   'onboarding.step2.search': 'Search by title',
   'onboarding.step2.search_desc': 'Search from Open Library',
   'onboarding.step2.skip': 'Maybe later',
+  'onboarding.step2.scan_another': 'Scan another',
   'onboarding.step3.title': 'Sync across devices?',
   'onboarding.step3.setup': 'Yes, setup sync',
   'onboarding.step3.setup_desc': 'Sync data to your phone or another laptop',

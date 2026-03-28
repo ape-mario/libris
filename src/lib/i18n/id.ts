@@ -362,6 +362,7 @@ export default {
   'onboarding.step2.search': 'Cari judul',
   'onboarding.step2.search_desc': 'Cari dari Open Library',
   'onboarding.step2.skip': 'Nanti saja',
+  'onboarding.step2.scan_another': 'Scan lagi',
   'onboarding.step3.title': 'Sync antar perangkat?',
   'onboarding.step3.setup': 'Ya, setup sync',
   'onboarding.step3.setup_desc': 'Sync data ke HP atau laptop lain',

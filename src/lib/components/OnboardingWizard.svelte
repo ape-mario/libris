@@ -184,10 +184,19 @@
   }
 
   // Step 2: Barcode detected
+  let barcodeProcessing = $state(false);
+  let barcodeResult = $state<string | null>(null);
+
   async function handleBarcode(code: string) {
+    step2Mode = 'scan'; // stay on scan view
+    barcodeProcessing = true;
+    barcodeResult = null;
+
     const { lookupByISBN } = await import('$lib/services/openlibrary');
     const { addBook } = await import('$lib/services/books');
     const result = await lookupByISBN(code);
+    barcodeProcessing = false;
+
     if (result) {
       const book = addBook(
         {
@@ -202,11 +211,12 @@
         true
       );
       if (book) {
+        barcodeResult = result.title;
         addedInStep2 = true;
-        step2Mode = 'done';
       }
     } else {
-      showToast(t('add.bulk.not_found'), 'error');
+      barcodeResult = null;
+      showToast(t('add.barcode_not_found'), 'info');
     }
   }
 
@@ -405,10 +415,29 @@
           </div>
 
         {:else if step2Mode === 'scan'}
-          {#await import('$lib/components/BarcodeScanner.svelte') then mod}
-            <mod.default onDetected={handleBarcode} />
-          {/await}
-          <button class="text-sm text-ink-muted hover:text-ink transition-colors mt-4" onclick={() => { step2Mode = 'choose'; }}>
+          {#if barcodeProcessing}
+            <div class="card p-8 text-center animate-fade-in">
+              <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse mx-auto mb-3"></div>
+              <p class="text-sm text-ink-muted">{t('add.barcode_searching')}</p>
+            </div>
+          {:else if barcodeResult}
+            <div class="card p-6 text-center animate-fade-in">
+              <div class="w-12 h-12 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sage"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <p class="font-display text-sm font-semibold text-ink mb-1">{barcodeResult}</p>
+              <p class="text-xs text-ink-muted mb-4">{t('add.barcode_found', { title: barcodeResult })}</p>
+              <div class="flex gap-2 justify-center">
+                <button class="btn-primary-sm" onclick={() => { step = 2; }}>{t('onboarding.next')}</button>
+                <button class="btn-secondary text-sm" onclick={() => { barcodeResult = null; }}>{t('onboarding.step2.scan_another')}</button>
+              </div>
+            </div>
+          {:else}
+            {#await import('$lib/components/BarcodeScanner.svelte') then mod}
+              <mod.default onDetected={handleBarcode} />
+            {/await}
+          {/if}
+          <button class="text-sm text-ink-muted hover:text-ink transition-colors mt-4" onclick={() => { step2Mode = 'choose'; barcodeProcessing = false; barcodeResult = null; }}>
             {t('onboarding.back')}
           </button>
 
