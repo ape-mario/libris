@@ -1,66 +1,74 @@
 <script lang="ts">
-  import { onMount, onDestroy, tick } from 'svelte';
+  import { onDestroy, tick } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
 
   let { onDetected, onError }: { onDetected: (code: string) => void; onError?: () => void } = $props();
 
-  let scannerRef: HTMLDivElement;
   let error = $state('');
   let scanning = $state(false);
   let manualISBN = $state('');
   let showManual = $state(false);
-  let scanner: any = null;
+  let Html5QrcodeClass: any = null;
+  let scannerInstance: any = null;
 
-  onMount(async () => {
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode');
-      scanner = new Html5Qrcode('barcode-scanner-region');
-    } catch (e) {
-      console.error('[Libris] Failed to init scanner:', e);
-    }
-  });
-
-  onDestroy(() => {
-    if (scanner) {
-      try { scanner.stop().catch(() => {}); } catch {}
-      try { scanner.clear(); } catch {}
-    }
+  // Load library eagerly but don't create instance yet
+  import('html5-qrcode').then(mod => {
+    Html5QrcodeClass = mod.Html5Qrcode;
+  }).catch(() => {
+    console.error('[Libris] Failed to load html5-qrcode');
   });
 
   async function startCamera() {
-    if (!scanner) return;
     error = '';
+
+    if (!Html5QrcodeClass) {
+      error = t('scanner.camera_error');
+      return;
+    }
+
     scanning = true;
-    await tick(); // wait for DOM to render the scanner div
+    await tick();
 
     try {
-      await scanner.start(
+      // Create fresh instance each time (element must exist in DOM now)
+      scannerInstance = new Html5QrcodeClass('barcode-scanner-region');
+
+      await scannerInstance.start(
         { facingMode: 'environment' },
         {
           fps: 10,
           qrbox: { width: 280, height: 120 },
-          aspectRatio: 1.333
+          aspectRatio: 1.333,
+          disableFlip: false
         },
         (decodedText: string) => {
-          // Success — stop and report
-          scanner.stop().catch(() => {});
-          scanning = false;
+          stopCamera();
           onDetected(decodedText);
         },
-        () => {
-          // Scan frame — no result yet, keep scanning
-        }
+        () => { /* scanning frame, no result yet */ }
       );
     } catch (e: any) {
       scanning = false;
-      error = e?.message?.includes('Permission') ? t('scanner.error') : t('scanner.camera_error');
-      onError?.();
+      scannerInstance = null;
+      const msg = String(e?.message || e || '');
+      if (msg.includes('Permission') || msg.includes('NotAllowed')) {
+        error = t('scanner.error');
+      } else {
+        error = t('scanner.camera_error') + ' (' + msg.slice(0, 80) + ')';
+      }
     }
   }
 
-  function stopCamera() {
-    if (scanner) {
-      scanner.stop().catch(() => {});
+  async function stopCamera() {
+    if (scannerInstance) {
+      try {
+        const state = scannerInstance.getState();
+        if (state === 2) { // SCANNING
+          await scannerInstance.stop();
+        }
+      } catch { /* already stopped */ }
+      try { scannerInstance.clear(); } catch {}
+      scannerInstance = null;
     }
     scanning = false;
   }
@@ -68,22 +76,22 @@
   async function handleFileInput(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file || !scanner) {
-      input.value = '';
-      return;
-    }
+    if (!file) return;
 
     error = '';
 
-    try {
-      const result = await scanner.scanFile(file, true);
-      if (result) {
-        onDetected(result);
-        input.value = '';
-        return;
-      }
-    } catch {
-      // scanFile throws if no barcode found
+    // Try html5-qrcode scanFile (needs instance)
+    if (Html5QrcodeClass) {
+      try {
+        const tempScanner = new Html5QrcodeClass('barcode-scanner-region');
+        const result = await tempScanner.scanFile(file, false);
+        tempScanner.clear();
+        if (result) {
+          onDetected(result);
+          input.value = '';
+          return;
+        }
+      } catch { /* no barcode found via html5-qrcode */ }
     }
 
     // Try native BarcodeDetector as fallback
@@ -99,7 +107,7 @@
           input.value = '';
           return;
         }
-      } catch { /* fallback failed */ }
+      } catch { /* native fallback failed */ }
     }
 
     error = t('scanner.no_barcode');
@@ -113,6 +121,10 @@
       onDetected(cleaned);
     }
   }
+
+  onDestroy(() => {
+    stopCamera();
+  });
 </script>
 
 <div class="animate-fade-in flex flex-col gap-4">
@@ -122,8 +134,10 @@
     </div>
   {/if}
 
+  <!-- Scanner div: always in DOM, hidden when not scanning -->
+  <div id="barcode-scanner-region" class="rounded-xl overflow-hidden {scanning ? '' : 'hidden'}"></div>
+
   {#if showManual}
-    <!-- Manual ISBN input -->
     <div class="card p-5">
       <h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-3">{t('scanner.manual_title')}</h3>
       <form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); handleManualSubmit(); }}>
@@ -144,15 +158,10 @@
       </button>
     </div>
   {:else if scanning}
-    <!-- Live camera scanner -->
-    <div class="relative rounded-xl overflow-hidden bg-ink">
-      <div id="barcode-scanner-region" class="w-full"></div>
-    </div>
     <button class="btn-secondary text-sm w-full" onclick={stopCamera}>
       {t('scanner.stop_camera')}
     </button>
   {:else}
-    <!-- Action buttons -->
     <button class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer w-full text-left" onclick={startCamera}>
       <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-accent">
