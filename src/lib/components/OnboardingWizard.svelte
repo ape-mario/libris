@@ -184,14 +184,17 @@
     }
   }
 
-  // Step 2: Barcode detected
+  // Step 2: Barcode
   let barcodeProcessing = $state(false);
-  let barcodeResult = $state<string | null>(null);
+  let barcodeResult = $state<'found' | 'not_found' | 'no_barcode' | null>(null);
+  let barcodeTitle = $state('');
+  let barcodeISBN = $state('');
 
   async function handleBarcode(code: string) {
-    step2Mode = 'scan'; // stay on scan view
+    step2Mode = 'scan';
     barcodeProcessing = true;
     barcodeResult = null;
+    barcodeISBN = code;
 
     const { lookupByISBN } = await import('$lib/services/openlibrary');
     const { addBook } = await import('$lib/services/books');
@@ -212,12 +215,12 @@
         true
       );
       if (book) {
-        barcodeResult = result.title;
+        barcodeTitle = result.title;
+        barcodeResult = 'found';
         addedInStep2 = true;
       }
     } else {
-      barcodeResult = null;
-      showToast(t('add.barcode_not_found'), 'info');
+      barcodeResult = 'not_found';
     }
   }
 
@@ -417,26 +420,58 @@
 
         {:else if step2Mode === 'scan'}
           {#if barcodeProcessing}
+            <!-- Loading: looking up ISBN -->
             <div class="card p-8 text-center animate-fade-in">
               <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse mx-auto mb-3"></div>
               <p class="text-sm text-ink-muted">{t('add.barcode_searching')}</p>
+              <p class="text-xs text-warm-400 font-mono mt-1">{barcodeISBN}</p>
             </div>
-          {:else if barcodeResult}
+
+          {:else if barcodeResult === 'found'}
+            <!-- Success: book found and added -->
             <div class="card p-6 text-center animate-fade-in">
               <div class="w-12 h-12 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-3">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sage"><path d="M20 6 9 17l-5-5"/></svg>
               </div>
-              <p class="font-display text-sm font-semibold text-ink mb-1">{barcodeResult}</p>
-              <p class="text-xs text-ink-muted mb-4">{t('add.barcode_found', { title: barcodeResult })}</p>
+              <p class="font-display text-sm font-semibold text-ink mb-1">{barcodeTitle}</p>
+              <p class="text-xs text-ink-muted mb-4">{t('add.barcode_found', { title: barcodeTitle })}</p>
               <div class="flex gap-2 justify-center">
                 <button class="btn-primary-sm" onclick={() => { step = 2; }}>{t('onboarding.next')}</button>
                 <button class="btn-secondary text-sm" onclick={() => { barcodeResult = null; }}>{t('onboarding.step2.scan_another')}</button>
               </div>
             </div>
+
+          {:else if barcodeResult === 'not_found'}
+            <!-- ISBN detected but book not in database -->
+            <div class="card p-6 text-center animate-fade-in">
+              <div class="w-12 h-12 rounded-full bg-warm-200/50 flex items-center justify-center mx-auto mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              </div>
+              <p class="font-display text-sm font-semibold text-ink mb-1">{t('onboarding.barcode_not_found_title')}</p>
+              <p class="text-xs text-ink-muted mb-1">{t('onboarding.barcode_not_found_desc')}</p>
+              <p class="text-xs text-warm-400 font-mono mb-4">ISBN: {barcodeISBN}</p>
+              <div class="flex gap-2 justify-center">
+                <button class="btn-secondary text-sm" onclick={() => { barcodeResult = null; }}>{t('onboarding.step2.scan_another')}</button>
+                <button class="btn-secondary text-sm" onclick={() => { step = 2; }}>{t('onboarding.step2.skip')}</button>
+              </div>
+            </div>
+
+          {:else if barcodeResult === 'no_barcode'}
+            <!-- Photo taken but no barcode detected -->
+            <div class="card p-6 text-center animate-fade-in">
+              <div class="w-12 h-12 rounded-full bg-berry/10 flex items-center justify-center mx-auto mb-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-berry"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+              </div>
+              <p class="font-display text-sm font-semibold text-ink mb-1">{t('onboarding.no_barcode_title')}</p>
+              <p class="text-xs text-ink-muted mb-4">{t('onboarding.no_barcode_desc')}</p>
+              <button class="btn-secondary text-sm" onclick={() => { barcodeResult = null; }}>{t('onboarding.try_again')}</button>
+            </div>
+
           {:else}
+            <!-- Scanner ready -->
             <BarcodeScanner
               onDetected={handleBarcode}
-              onError={() => { showToast(t('scanner.no_barcode'), 'error'); }}
+              onError={() => { barcodeResult = 'no_barcode'; }}
             />
           {/if}
           <button class="text-sm text-ink-muted hover:text-ink transition-colors mt-4" onclick={() => { step2Mode = 'choose'; barcodeProcessing = false; barcodeResult = null; }}>
