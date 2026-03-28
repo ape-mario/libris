@@ -317,7 +317,7 @@
 
   {#if mode === 'scan'}
     <div class="rounded-xl overflow-hidden">
-      <BarcodeScanner onDetected={handleBarcode} />
+      <BarcodeScanner onDetected={handleBarcode} onError={() => showToast(t('scanner.no_barcode'), 'error')} />
     </div>
   {/if}
 

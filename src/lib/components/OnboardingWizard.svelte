@@ -2,6 +2,7 @@
   import { t } from '$lib/i18n/index.svelte';
   import { getCurrentUser } from '$lib/stores/user.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
+  import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 
   let { onComplete }: { onComplete: () => void } = $props();
 
@@ -433,9 +434,10 @@
               </div>
             </div>
           {:else}
-            {#await import('$lib/components/BarcodeScanner.svelte') then mod}
-              <mod.default onDetected={handleBarcode} />
-            {/await}
+            <BarcodeScanner
+              onDetected={handleBarcode}
+              onError={() => { showToast(t('scanner.no_barcode'), 'error'); }}
+            />
           {/if}
           <button class="text-sm text-ink-muted hover:text-ink transition-colors mt-4" onclick={() => { step2Mode = 'choose'; barcodeProcessing = false; barcodeResult = null; }}>
             {t('onboarding.back')}

@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { t } from '$lib/i18n/index.svelte';
 
-  let { onDetected }: { onDetected: (code: string) => void } = $props();
+  let { onDetected, onError }: { onDetected: (code: string) => void; onError?: () => void } = $props();
 
   let error = $state('');
   let processing = $state(false);
@@ -51,12 +51,14 @@
             onDetected(code);
           } else {
             error = t('scanner.no_barcode');
+            onError?.();
           }
         }
       );
     } catch {
       processing = false;
       error = t('scanner.no_barcode');
+      onError?.();
     }
   }
 
