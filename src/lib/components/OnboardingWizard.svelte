@@ -388,27 +388,27 @@
           <div class="space-y-3">
             <button
               class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer w-full text-left"
-              onclick={() => { step2Mode = 'scan'; }}
+              onclick={() => { step2Mode = 'search'; }}
             >
               <div class="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-ink text-sm">{t('onboarding.step2.scan')}</p>
-                <p class="text-xs text-ink-muted">{t('onboarding.step2.scan_desc')}</p>
+                <p class="font-semibold text-ink text-sm">{t('onboarding.step2.search')}</p>
+                <p class="text-xs text-ink-muted">{t('onboarding.step2.search_desc')}</p>
               </div>
             </button>
 
             <button
               class="card p-5 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer w-full text-left"
-              onclick={() => { step2Mode = 'search'; }}
+              onclick={() => { step2Mode = 'scan'; }}
             >
               <div class="w-10 h-10 rounded-xl bg-sage/10 flex items-center justify-center flex-shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-sage"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-sage"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
               </div>
               <div class="min-w-0">
-                <p class="font-semibold text-ink text-sm">{t('onboarding.step2.search')}</p>
-                <p class="text-xs text-ink-muted">{t('onboarding.step2.search_desc')}</p>
+                <p class="font-semibold text-ink text-sm">{t('onboarding.step2.scan')}</p>
+                <p class="text-xs text-ink-muted">{t('onboarding.step2.scan_desc')}</p>
               </div>
             </button>
 
