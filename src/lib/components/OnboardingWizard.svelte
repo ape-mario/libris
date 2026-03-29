@@ -21,6 +21,7 @@
   let searchQuery = $state('');
   let searchResults = $state<any[]>([]);
   let searching = $state(false);
+  let searchDone = $state(false);
   let addedInStep2 = $state(false);
 
   // Step 3 sub-states
@@ -154,6 +155,8 @@
   async function handleSearch() {
     if (!searchQuery.trim()) return;
     searching = true;
+    searchDone = false;
+    searchResults = [];
     try {
       const { searchOpenLibrary } = await import('$lib/services/openlibrary');
       searchResults = await searchOpenLibrary(searchQuery);
@@ -161,6 +164,7 @@
       searchResults = [];
     }
     searching = false;
+    searchDone = true;
   }
 
   // Step 2: Add book from search result
@@ -474,6 +478,14 @@
                 </button>
               </form>
 
+              {#if searching}
+                <div class="flex justify-center py-4">
+                  <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse"></div>
+                </div>
+              {:else if searchDone && searchResults.length === 0}
+                <p class="text-xs text-ink-muted text-center py-3">{t('add.no_results')}</p>
+              {/if}
+
               {#if searchResults.length > 0}
                 <div class="flex flex-col gap-2 max-h-48 overflow-y-auto mb-3">
                   {#each searchResults as result}
@@ -534,6 +546,14 @@
                 {searching ? '...' : t('add.search')}
               </button>
             </form>
+
+            {#if searching}
+              <div class="flex justify-center py-6">
+                <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse"></div>
+              </div>
+            {:else if searchDone && searchResults.length === 0}
+              <p class="text-sm text-ink-muted text-center py-4">{t('add.no_results')}</p>
+            {/if}
 
             {#if searchResults.length > 0}
               <div class="space-y-2 max-h-64 overflow-y-auto">

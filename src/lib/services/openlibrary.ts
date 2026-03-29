@@ -8,11 +8,18 @@ export interface OpenLibraryResult {
 }
 
 export async function searchOpenLibrary(query: string): Promise<OpenLibraryResult[]> {
+  // Try Open Library first, fallback to Google Books
+  const olResults = await searchOpenLibrary_OL(query);
+  if (olResults.length > 0) return olResults;
+  return searchGoogleBooks(query);
+}
+
+async function searchOpenLibrary_OL(query: string): Promise<OpenLibraryResult[]> {
   const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&fields=title,author_name,isbn,cover_i,first_publish_year,publisher`;
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
@@ -30,7 +37,40 @@ export async function searchOpenLibrary(query: string): Promise<OpenLibraryResul
       publisher: doc.publisher?.[0]
     }));
   } catch {
-    // Network error, timeout, or abort — return empty results
+    return [];
+  }
+}
+
+async function searchGoogleBooks(query: string): Promise<OpenLibraryResult[]> {
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=10`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) return [];
+
+    const data = await res.json();
+
+    return (data.items || []).map((item: any) => {
+      const info = item.volumeInfo || {};
+      const identifiers = info.industryIdentifiers || [];
+      const isbn = identifiers.find((id: any) => id.type === 'ISBN_13')?.identifier
+        || identifiers.find((id: any) => id.type === 'ISBN_10')?.identifier;
+
+      return {
+        title: info.title || 'Unknown',
+        authors: info.authors || [],
+        isbn,
+        coverUrl: info.imageLinks?.thumbnail?.replace('http://', 'https://') || undefined,
+        publishYear: info.publishedDate ? parseInt(info.publishedDate) : undefined,
+        publisher: info.publisher || undefined
+      };
+    });
+  } catch {
     return [];
   }
 }

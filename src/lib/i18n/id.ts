@@ -104,6 +104,7 @@ export default {
   'add.bulk.error': 'Gagal (offline?)',
   'add.bulk.complete': 'Semua buku berhasil ditambahkan!',
   'add.bulk.go_library': 'Lihat koleksi →',
+  'add.no_results': 'Tidak ada hasil. Coba kata kunci lain.',
   'add.barcode_searching': 'Mencari informasi buku...',
   'add.barcode_found': 'Ditemukan: {title}',
   'add.barcode_not_found': 'Buku tidak ditemukan di database. Isi data manual.',
