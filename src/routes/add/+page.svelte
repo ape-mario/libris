@@ -156,7 +156,9 @@
       publishYear = result.publishYear?.toString() || '';
       showToast(t('add.barcode_found', { title: result.title }), 'success');
     } else {
-      showToast(t('add.barcode_not_found'), 'info');
+      // ISBN not in database — switch to search mode so user can search by title
+      mode = 'search';
+      showToast(t('add.barcode_not_found_search'), 'info');
     }
   }
 

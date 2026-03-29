@@ -164,13 +164,13 @@
   }
 
   // Step 2: Add book from search result
-  async function handleAddFromSearch(result: any) {
+  async function handleAddFromSearch(result: any, overrideIsbn?: string) {
     const { addBook } = await import('$lib/services/books');
     const book = addBook(
       {
         title: result.title,
-        authors: result.authors,
-        isbn: result.isbn,
+        authors: result.authors || [],
+        isbn: overrideIsbn || result.isbn,
         coverUrl: result.coverUrl,
         publisher: result.publisher,
         publishYear: result.publishYear,
@@ -180,8 +180,15 @@
     );
     if (book) {
       addedInStep2 = true;
-      step2Mode = 'done';
+      barcodeTitle = result.title;
+      barcodeResult = 'found';
+      searchResults = [];
+      searchQuery = '';
     }
+  }
+
+  function handleSearchSelect(result: any) {
+    handleAddFromSearch(result, barcodeISBN);
   }
 
   // Step 2: Barcode
@@ -442,14 +449,50 @@
             </div>
 
           {:else if barcodeResult === 'not_found'}
-            <!-- ISBN detected but book not in database -->
-            <div class="card p-6 text-center animate-fade-in">
-              <div class="w-12 h-12 rounded-full bg-warm-200/50 flex items-center justify-center mx-auto mb-3">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            <!-- ISBN detected but book not in database — offer title search -->
+            <div class="card p-6 animate-fade-in">
+              <div class="text-center mb-4">
+                <div class="w-12 h-12 rounded-full bg-warm-200/50 flex items-center justify-center mx-auto mb-3">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                </div>
+                <p class="font-display text-sm font-semibold text-ink mb-1">{t('onboarding.barcode_not_found_title')}</p>
+                <p class="text-xs text-ink-muted">{t('onboarding.barcode_not_found_search')}</p>
+                <p class="text-xs text-warm-400 font-mono mt-1">ISBN: {barcodeISBN}</p>
               </div>
-              <p class="font-display text-sm font-semibold text-ink mb-1">{t('onboarding.barcode_not_found_title')}</p>
-              <p class="text-xs text-ink-muted mb-1">{t('onboarding.barcode_not_found_desc')}</p>
-              <p class="text-xs text-warm-400 font-mono mb-4">ISBN: {barcodeISBN}</p>
+
+              <!-- Inline title search -->
+              <form class="flex gap-2 mb-3" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+                <input
+                  type="text"
+                  bind:value={searchQuery}
+                  placeholder={t('add.search_placeholder')}
+                  class="input-field flex-1 text-sm"
+                  autofocus
+                />
+                <button type="submit" class="btn-primary-sm" disabled={searching}>
+                  {searching ? '...' : t('add.search')}
+                </button>
+              </form>
+
+              {#if searchResults.length > 0}
+                <div class="flex flex-col gap-2 max-h-48 overflow-y-auto mb-3">
+                  {#each searchResults as result}
+                    <button
+                      class="card p-3 flex gap-3 text-left hover:shadow-md transition-shadow w-full"
+                      onclick={() => handleSearchSelect(result)}
+                    >
+                      {#if result.coverUrl}
+                        <img src={result.coverUrl} alt={result.title} class="w-8 h-12 object-cover rounded flex-shrink-0" />
+                      {/if}
+                      <div class="min-w-0">
+                        <p class="text-sm font-medium text-ink truncate">{result.title}</p>
+                        <p class="text-xs text-ink-muted truncate">{result.authors.join(', ')}</p>
+                      </div>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+
               <div class="flex gap-2 justify-center">
                 <button class="btn-secondary text-sm" onclick={() => { barcodeResult = null; }}>{t('onboarding.step2.scan_another')}</button>
                 <button class="btn-secondary text-sm" onclick={() => { step = 2; }}>{t('onboarding.step2.skip')}</button>
