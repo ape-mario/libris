@@ -162,11 +162,19 @@
     }
   }
 
+  let searchDone = $state(false);
+
   async function handleSearch() {
     if (!searchQuery.trim()) return;
+    if (!navigator.onLine) {
+      showToast(t('add.error_offline'), 'error');
+      return;
+    }
     searching = true;
+    searchDone = false;
     searchResults = await searchOpenLibrary(searchQuery);
     searching = false;
+    searchDone = true;
   }
 
   function selectResult(result: OpenLibraryResult) {
@@ -292,6 +300,14 @@
         {searching ? '...' : t('add.search')}
       </button>
     </form>
+
+    {#if searching}
+      <div class="flex justify-center py-8">
+        <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse"></div>
+      </div>
+    {:else if searchDone && searchResults.length === 0}
+      <p class="text-sm text-ink-muted text-center py-8">{t('add.no_results')}</p>
+    {/if}
 
     <div class="flex flex-col gap-2">
       {#each searchResults as result, i}

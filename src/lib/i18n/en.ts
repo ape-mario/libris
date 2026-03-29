@@ -105,6 +105,7 @@ export default {
   'add.bulk.complete': 'All books added!',
   'add.bulk.go_library': 'Go to library →',
   'add.no_results': 'No results. Try different keywords.',
+  'add.error_offline': 'No internet connection.',
   'add.barcode_searching': 'Looking up book info...',
   'add.barcode_found': 'Found: {title}',
   'add.barcode_not_found': 'Book not found in database. Fill in details manually.',

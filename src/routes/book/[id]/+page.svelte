@@ -92,25 +92,29 @@
 
   function saveEdit() {
     if (!book || !editTitle.trim()) return;
-    updateBook(book.id, {
-      title: editTitle.trim(),
-      authors: editAuthors.split(',').map(a => a.trim()).filter(Boolean),
-      isbn: editIsbn.trim() || undefined,
-      publisher: editPublisher.trim() || undefined,
-      publishYear: editPublishYear ? parseInt(editPublishYear) : undefined,
-      edition: editEdition.trim() || undefined,
-      categories: editCategories.split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
-      seriesId: editSeriesId || undefined,
-      seriesOrder: editSeriesOrder ? parseInt(editSeriesOrder) : undefined
-    });
-    book = getBookById(book.id) || null;
-    if (book?.seriesId) {
-      const s = q.getItem('series', book.seriesId) as Series | undefined;
-      seriesName = s?.name || '';
-    } else {
-      seriesName = '';
+    try {
+      updateBook(book.id, {
+        title: editTitle.trim(),
+        authors: editAuthors.split(',').map(a => a.trim()).filter(Boolean),
+        isbn: editIsbn.trim() || undefined,
+        publisher: editPublisher.trim() || undefined,
+        publishYear: editPublishYear ? parseInt(editPublishYear) : undefined,
+        edition: editEdition.trim() || undefined,
+        categories: editCategories.split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
+        seriesId: editSeriesId || undefined,
+        seriesOrder: editSeriesOrder ? parseInt(editSeriesOrder) : undefined
+      });
+      book = getBookById(book.id) || null;
+      if (book?.seriesId) {
+        const s = q.getItem('series', book.seriesId) as Series | undefined;
+        seriesName = s?.name || '';
+      } else {
+        seriesName = '';
+      }
+      editing = false;
+    } catch {
+      showToast(t('add.error_save_failed'), 'error');
     }
-    editing = false;
   }
 
   function updateStatus(status: 'unread' | 'reading' | 'read' | 'dnf') {
@@ -169,15 +173,19 @@
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file || !book) return;
-    const blob = await resizeImage(file);
-    const reader = new FileReader();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    await setCoverBase64(book.id, base64);
-    coverSrc = base64;
+    try {
+      const blob = await resizeImage(file);
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      await setCoverBase64(book.id, base64);
+      coverSrc = base64;
+    } catch {
+      showToast(t('add.error_save_failed'), 'error');
+    }
   }
 
   async function handleDelete() {
