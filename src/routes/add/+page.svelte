@@ -14,7 +14,7 @@
   import { t } from '$lib/i18n/index.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
 
-  let mode = $state<'search' | 'manual' | 'scan' | 'bulk'>('search');
+  let mode = $state<'search' | 'manual' | 'scan' | 'bulk' | 'quick'>('search');
   let searchQuery = $state('');
   let searchResults = $state<OpenLibraryResult[]>([]);
   let searching = $state(false);
@@ -162,6 +162,28 @@
     }
   }
 
+  // Quick-add mode
+  let quickTitle = $state('');
+  let quickAuthors = $state('');
+  let quickCount = $state(0);
+  let quickTitleRef: HTMLInputElement;
+
+  function handleQuickAdd() {
+    if (!quickTitle.trim()) return;
+    const book = addBook({
+      title: quickTitle.trim(),
+      authors: quickAuthors.split(',').map(a => a.trim()).filter(Boolean),
+      categories: []
+    }, true);
+    if (book) {
+      quickCount++;
+      quickTitle = '';
+      quickAuthors = '';
+      // Re-focus title input for next book
+      setTimeout(() => quickTitleRef?.focus(), 50);
+    }
+  }
+
   let searchDone = $state(false);
 
   async function handleSearch() {
@@ -273,6 +295,7 @@
 
   <div class="flex gap-2 mb-6 overflow-x-auto pb-0.5">
     {#each [
+      { key: 'quick', label: t('add.quick') },
       { key: 'search', label: t('add.search') },
       { key: 'manual', label: t('add.manual') },
       { key: 'scan', label: t('add.scan') },
@@ -285,7 +308,42 @@
     {/each}
   </div>
 
-  {#if mode === 'search'}
+  {#if mode === 'quick'}
+    <div class="flex flex-col gap-4">
+      {#if quickCount > 0}
+        <div class="card p-3 flex items-center gap-3 bg-sage/5 border-sage/20 animate-fade-in">
+          <div class="w-8 h-8 rounded-full bg-sage/10 flex items-center justify-center text-sage flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <span class="text-sm text-ink">{t('add.quick.count', { count: quickCount.toString() })}</span>
+        </div>
+      {/if}
+
+      <form class="card p-5 flex flex-col gap-4" onsubmit={(e) => { e.preventDefault(); handleQuickAdd(); }}>
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.book_title')} *</span>
+          <input
+            bind:this={quickTitleRef}
+            type="text"
+            bind:value={quickTitle}
+            class="input-field"
+            autofocus
+          />
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.authors')}</span>
+          <input type="text" bind:value={quickAuthors} placeholder={t('add.authors_placeholder')} class="input-field" />
+        </label>
+
+        <button type="submit" class="btn-primary w-full" disabled={!quickTitle.trim()}>
+          {t('add.quick.add')}
+        </button>
+      </form>
+
+      <p class="text-xs text-ink-muted text-center">{t('add.quick.hint')}</p>
+    </div>
+  {:else if mode === 'search'}
     <form class="flex gap-2 mb-5" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
       <div class="relative flex-1">
         <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 text-warm-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
