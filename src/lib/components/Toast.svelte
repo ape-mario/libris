@@ -10,8 +10,8 @@
   };
 
   const colorMap: Record<string, string> = {
-    success: 'bg-sage text-white',
-    error: 'bg-berry text-white',
+    success: 'bg-sage text-cream',
+    error: 'bg-berry text-cream',
     info: 'bg-ink text-cream'
   };
 </script>

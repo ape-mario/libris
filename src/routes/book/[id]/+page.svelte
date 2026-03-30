@@ -111,6 +111,7 @@
       } else {
         seriesName = '';
       }
+      showToast(t('toast.book_updated'), 'success');
       editing = false;
     } catch {
       showToast(t('add.error_save_failed'), 'error');

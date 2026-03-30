@@ -201,7 +201,7 @@
     </button>
 
     <!-- 4. Live scan (last — may be blurry on some phones) -->
-    <button class="text-center text-xs text-warm-400 hover:text-ink-muted py-1" onclick={startCamera}>
+    <button class="text-center text-xs text-warm-400 hover:text-ink-muted py-3 px-4 min-h-[44px]" onclick={startCamera}>
       {t('scanner.live_scan')}
     </button>
   {/if}

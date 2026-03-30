@@ -262,7 +262,7 @@
     <!-- Back button -->
     {#if step > 0}
       <button
-        class="absolute -top-12 left-6 flex items-center gap-1 text-sm text-ink-muted hover:text-ink transition-colors"
+        class="mb-2 flex items-center gap-1 text-sm text-ink-muted hover:text-ink transition-colors"
         onclick={goBack}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -432,7 +432,7 @@
         {:else if step2Mode === 'scan'}
           {#if barcodeProcessing}
             <!-- Loading: looking up ISBN -->
-            <div class="card p-8 text-center animate-fade-in">
+            <div class="card p-6 text-center animate-fade-in">
               <div class="w-8 h-0.5 bg-accent rounded-full animate-pulse mx-auto mb-3"></div>
               <p class="text-sm text-ink-muted">{t('add.barcode_searching')}</p>
               <p class="text-xs text-warm-400 font-mono mt-1">{barcodeISBN}</p>

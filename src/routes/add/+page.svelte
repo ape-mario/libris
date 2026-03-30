@@ -177,6 +177,7 @@
     }, true);
     if (book) {
       quickCount++;
+      showToast(t('add.quick.added', { title: quickTitle.trim() }), 'success');
       quickTitle = '';
       quickAuthors = '';
       // Re-focus title input for next book
@@ -293,7 +294,7 @@
 
   <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('add.title')}</h1>
 
-  <div class="flex gap-2 mb-6 overflow-x-auto pb-0.5">
+  <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
     {#each [
       { key: 'quick', label: t('add.quick') },
       { key: 'search', label: t('add.search') },

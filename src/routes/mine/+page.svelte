@@ -171,7 +171,12 @@
     </div>
   {:else if tab === 'timeline'}
     {#if timelineGroups.length === 0}
-      <p class="text-sm text-ink-muted text-center py-12">{t('mine.empty')}</p>
+      <div class="text-center py-16">
+        <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+        </div>
+        <p class="font-display text-lg text-ink-light mb-1">{t('mine.empty')}</p>
+      </div>
     {:else}
       <div class="flex flex-col gap-6">
         {#each timelineGroups as group}
