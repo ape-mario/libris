@@ -60,9 +60,9 @@
 </script>
 
 <div class="animate-fade-up">
-  <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('browse.title')}</h1>
+  <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-4">{t('browse.title')}</h1>
 
-  <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
+  <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
     {#each [
       { key: 'categories', label: t('browse.categories') },
       { key: 'series', label: t('browse.series') },

@@ -219,7 +219,7 @@
 </script>
 
 <div class="animate-fade-up">
-  <div class="flex items-end justify-between mb-6">
+  <div class="flex items-end justify-between mb-4">
     <div>
       <h1 class="font-display text-2xl font-bold text-ink tracking-tight">{t('library.title')}</h1>
       {#if allBooks.length > 0}
@@ -331,11 +331,11 @@
   {/if}
 
   {#if loading}
-    <div class="flex justify-center py-16">
+    <div class="flex justify-center py-10">
       <div class="w-8 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
     </div>
   {:else if books.length === 0 && !query && !filterCategory}
-    <div class="text-center py-16 animate-fade-in">
+    <div class="text-center py-10 animate-fade-in">
       <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
       </div>

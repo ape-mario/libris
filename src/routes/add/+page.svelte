@@ -293,9 +293,9 @@
     {t('common.back')}
   </button>
 
-  <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-6">{t('add.title')}</h1>
+  <h1 class="font-display text-2xl font-bold text-ink tracking-tight mb-4">{t('add.title')}</h1>
 
-  <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
+  <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
     {#each [
       { key: 'quick', label: t('add.quick') },
       { key: 'search', label: t('add.search') },

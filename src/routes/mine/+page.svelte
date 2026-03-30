@@ -132,11 +132,11 @@
 </script>
 
 <div class="animate-fade-up">
-  <div class="mb-6">
+  <div class="mb-4">
     <h1 class="font-display text-2xl font-bold text-ink tracking-tight">{t('mine.title')}</h1>
   </div>
 
-  <div class="flex gap-2 mb-6 overflow-x-auto pb-1">
+  <div class="flex gap-2 mb-4 overflow-x-auto pb-1">
     {#each [
       { key: 'reading', label: t('mine.reading') },
       { key: 'read', label: t('mine.finished') },
@@ -159,11 +159,11 @@
     ontouchend={handleTouchEnd}
   >
   {#if loading}
-    <div class="flex justify-center py-16">
+    <div class="flex justify-center py-10">
       <div class="w-8 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
     </div>
   {:else if books.length === 0 && tab !== 'timeline'}
-    <div class="text-center py-16">
+    <div class="text-center py-10">
       <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
       </div>
@@ -171,7 +171,7 @@
     </div>
   {:else if tab === 'timeline'}
     {#if timelineGroups.length === 0}
-      <div class="text-center py-16">
+      <div class="text-center py-10">
         <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
         </div>

@@ -166,7 +166,7 @@
     </div>
   {/if}
   <TopBar />
-  <main class="pt-20 pb-24 px-5 min-h-screen bg-cream max-w-2xl mx-auto noise-bg">
+  <main class="pt-16 pb-20 px-5 sm:pt-20 sm:pb-24 min-h-screen bg-cream max-w-2xl mx-auto noise-bg">
     {@render children()}
   </main>
   <BottomNav />

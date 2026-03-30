@@ -88,11 +88,11 @@
   {/if}
 
   {#if loading}
-    <div class="flex justify-center py-16">
+    <div class="flex justify-center py-10">
       <div class="w-8 h-0.5 bg-warm-300 rounded-full animate-pulse"></div>
     </div>
   {:else if shelves.length === 0}
-    <div class="text-center py-16">
+    <div class="text-center py-10">
       <div class="w-16 h-16 rounded-2xl bg-warm-100 mx-auto mb-4 flex items-center justify-center">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="text-warm-400"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
       </div>
