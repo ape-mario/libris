@@ -126,8 +126,12 @@
   }
 
   async function handleClearCache() {
-    await clearCoverCache();
-    showToast(t('toast.cache_cleared'), 'success');
+    try {
+      await clearCoverCache();
+      showToast(t('toast.cache_cleared'), 'success');
+    } catch {
+      showToast(t('toast.export_failed'), 'error');
+    }
   }
 
   async function handleExport() {

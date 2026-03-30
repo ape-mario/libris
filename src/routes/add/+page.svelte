@@ -180,8 +180,9 @@
       showToast(t('add.quick.added', { title: quickTitle.trim() }), 'success');
       quickTitle = '';
       quickAuthors = '';
-      // Re-focus title input for next book
       setTimeout(() => quickTitleRef?.focus(), 50);
+    } else {
+      showToast(t('add.error_save_failed'), 'error');
     }
   }
 

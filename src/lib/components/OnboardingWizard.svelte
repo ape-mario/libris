@@ -154,6 +154,10 @@
   // Step 2: Search Open Library
   async function handleSearch() {
     if (!searchQuery.trim()) return;
+    if (!navigator.onLine) {
+      showToast(t('add.error_offline'), 'error');
+      return;
+    }
     searching = true;
     searchDone = false;
     searchResults = [];
@@ -161,6 +165,7 @@
       const { searchOpenLibrary } = await import('$lib/services/openlibrary');
       searchResults = await searchOpenLibrary(searchQuery);
     } catch {
+      showToast(t('add.error_save_failed'), 'error');
       searchResults = [];
     }
     searching = false;
@@ -169,25 +174,31 @@
 
   // Step 2: Add book from search result
   async function handleAddFromSearch(result: any, overrideIsbn?: string) {
-    const { addBook } = await import('$lib/services/books');
-    const book = addBook(
-      {
-        title: result.title,
-        authors: result.authors || [],
-        isbn: overrideIsbn || result.isbn,
-        coverUrl: result.coverUrl,
-        publisher: result.publisher,
-        publishYear: result.publishYear,
-        categories: []
-      },
-      true
-    );
-    if (book) {
-      addedInStep2 = true;
-      barcodeTitle = result.title;
-      barcodeResult = 'found';
-      searchResults = [];
-      searchQuery = '';
+    try {
+      const { addBook } = await import('$lib/services/books');
+      const book = addBook(
+        {
+          title: result.title,
+          authors: result.authors || [],
+          isbn: overrideIsbn || result.isbn,
+          coverUrl: result.coverUrl,
+          publisher: result.publisher,
+          publishYear: result.publishYear,
+          categories: []
+        },
+        true
+      );
+      if (book) {
+        addedInStep2 = true;
+        barcodeTitle = result.title;
+        barcodeResult = 'found';
+        searchResults = [];
+        searchQuery = '';
+      } else {
+        showToast(t('add.error_save_failed'), 'error');
+      }
+    } catch {
+      showToast(t('add.error_save_failed'), 'error');
     }
   }
 
