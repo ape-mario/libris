@@ -7,7 +7,6 @@
   import { getUserBookData, setUserBookData } from '$lib/services/userbooks';
   import { resizeImage } from '$lib/services/covers';
   import { getCurrentUser } from '$lib/stores/user.svelte';
-  import { getAllSeries, createSeries } from '$lib/services/series';
   import { q } from '$lib/db';
   import type { Book, UserBookData, Series, Shelf } from '$lib/db';
   import { showConfirm, showPrompt } from '$lib/stores/dialog.svelte';
@@ -15,7 +14,13 @@
   import { t } from '$lib/i18n/index.svelte';
   import { cacheCoverIfNeeded, getCoverBase64, setCoverBase64 } from '$lib/services/coverCache';
   import { getUserShelves, addBookToShelf, removeBookFromShelf } from '$lib/services/shelves';
-  import BookCard from '$lib/components/BookCard.svelte';
+  import BookEditForm from '$lib/components/book/BookEditForm.svelte';
+  import BookQuotes from '$lib/components/book/BookQuotes.svelte';
+  import BookTags from '$lib/components/book/BookTags.svelte';
+  import BookAcquisition from '$lib/components/book/BookAcquisition.svelte';
+  import BookRereadHistory from '$lib/components/book/BookRereadHistory.svelte';
+  import BookDnfDetails from '$lib/components/book/BookDnfDetails.svelte';
+  import BookRelated from '$lib/components/book/BookRelated.svelte';
 
   let book = $state<Book | null>(null);
   let userData = $state<UserBookData | null>(null);
@@ -24,19 +29,6 @@
   let user = $derived(getCurrentUser());
   let editing = $state(false);
   let coverSrc = $state<string | null>(null);
-
-  // Edit form fields
-  let editTitle = $state('');
-  let editAuthors = $state('');
-  let editIsbn = $state('');
-  let editCategories = $state('');
-  let editPublisher = $state('');
-  let editPublishYear = $state('');
-  let editEdition = $state('');
-  let editSeriesId = $state('');
-  let editSeriesOrder = $state('');
-  let seriesList = $state<Series[]>([]);
-  let newSeriesName = $state('');
   let seriesName = $state('');
 
   let unsubBook: (() => void)[] = [];
@@ -74,36 +66,10 @@
 
   onDestroy(() => unsubBook.forEach(f => f()));
 
-  function startEditing() {
+  function handleEditSave(updates: Partial<Book>) {
     if (!book) return;
-    editTitle = book.title;
-    editAuthors = book.authors.join(', ');
-    editIsbn = book.isbn || '';
-    editPublisher = book.publisher || '';
-    editPublishYear = book.publishYear?.toString() || '';
-    editEdition = book.edition || '';
-    editCategories = book.categories.join(', ');
-    editSeriesId = book.seriesId || '';
-    editSeriesOrder = book.seriesOrder?.toString() || '';
-    newSeriesName = '';
-    seriesList = getAllSeries();
-    editing = true;
-  }
-
-  function saveEdit() {
-    if (!book || !editTitle.trim()) return;
     try {
-      updateBook(book.id, {
-        title: editTitle.trim(),
-        authors: editAuthors.split(',').map(a => a.trim()).filter(Boolean),
-        isbn: editIsbn.trim() || undefined,
-        publisher: editPublisher.trim() || undefined,
-        publishYear: editPublishYear ? parseInt(editPublishYear) : undefined,
-        edition: editEdition.trim() || undefined,
-        categories: editCategories.split(',').map(c => c.trim().toLowerCase()).filter(Boolean),
-        seriesId: editSeriesId || undefined,
-        seriesOrder: editSeriesOrder ? parseInt(editSeriesOrder) : undefined
-      });
+      updateBook(book.id, updates);
       book = getBookById(book.id) || null;
       if (book?.seriesId) {
         const s = q.getItem('series', book.seriesId) as Series | undefined;
@@ -128,10 +94,8 @@
     const current = userData?.rating || 0;
     let newRating: number | undefined;
     if (current === star) {
-      // Click same star: drop to half
       newRating = star - 0.5;
     } else if (current === star - 0.5) {
-      // Click same star again: clear
       newRating = undefined;
     } else {
       newRating = star;
@@ -214,18 +178,15 @@
     const num = parseInt(value) || undefined;
     const updates: Record<string, unknown> = { [field]: num };
 
-    // Log progress history when currentPage changes
     if (field === 'currentPage' && num) {
       const today = new Date().toISOString().slice(0, 10);
       const history = [...(userData?.progressHistory || [])];
-      // Update today's entry or add new one
       const todayIdx = history.findIndex(h => h.date === today);
       if (todayIdx >= 0) {
         history[todayIdx] = { date: today, page: num };
       } else {
         history.push({ date: today, page: num });
       }
-      // Cap at 90 entries to prevent unbounded growth
       updates.progressHistory = history.slice(-90);
     }
 
@@ -252,13 +213,11 @@
     if (!current) return [];
     const seen = new Set<string>([current.id]);
     const result: Book[] = [];
-    // 1. Same series
     if (current.seriesId) {
       for (const b of getBooksBySeries(current.seriesId)) {
         if (!seen.has(b.id)) { seen.add(b.id); result.push(b); }
       }
     }
-    // 2. Same author, 3. Same category
     const allBooks = getBooks();
     for (const b of allBooks) {
       if (seen.has(b.id)) continue;
@@ -275,84 +234,29 @@
     return result.slice(0, 6);
   });
 
-  // Tags
-  let newTag = $state('');
-  function addTag() {
-    if (!user || !book || !newTag.trim()) return;
-    const tags = [...(userData?.tags || [])];
-    const tag = newTag.trim().toLowerCase();
-    if (!tags.includes(tag)) {
-      tags.push(tag);
-      userData = setUserBookData(user.id, book.id, { tags });
-    }
-    newTag = '';
-  }
-  function removeTag(tag: string) {
+  function handleQuotesUpdate(quotes: { text: string; page?: number; note?: string }[]) {
     if (!user || !book) return;
-    const tags = (userData?.tags || []).filter(t => t !== tag);
+    userData = setUserBookData(user.id, book.id, { quotes });
+  }
+
+  function handleTagsUpdate(tags: string[]) {
+    if (!user || !book) return;
     userData = setUserBookData(user.id, book.id, { tags });
   }
 
-  // Acquisition
-  let acquisitionOpen = $state(false);
-  function updateAcquisition(field: 'acquiredFrom' | 'acquiredPrice' | 'acquiredDate', value: string) {
+  function handleAcquisitionUpdate(field: string, value: string) {
     if (!user || !book) return;
     userData = setUserBookData(user.id, book.id, { [field]: value || undefined });
   }
 
-  // Quotes
-  let addingQuote = $state(false);
-  let newQuoteText = $state('');
-  let newQuotePage = $state('');
-  let newQuoteNote = $state('');
-  function saveQuote() {
-    if (!user || !book || !newQuoteText.trim()) return;
-    const quotes = [...(userData?.quotes || [])];
-    quotes.push({
-      text: newQuoteText.trim(),
-      page: newQuotePage ? parseInt(newQuotePage) : undefined,
-      note: newQuoteNote.trim() || undefined
-    });
-    userData = setUserBookData(user.id, book.id, { quotes });
-    newQuoteText = '';
-    newQuotePage = '';
-    newQuoteNote = '';
-    addingQuote = false;
-  }
-  function removeQuote(index: number) {
+  function handleRereadUpdate(readHistory: { dateStarted?: string; dateFinished?: string; rating?: number; notes?: string }[]) {
     if (!user || !book) return;
-    const quotes = [...(userData?.quotes || [])];
-    quotes.splice(index, 1);
-    userData = setUserBookData(user.id, book.id, { quotes });
+    userData = setUserBookData(user.id, book.id, { readHistory });
   }
 
-  // Re-read history
-  let addingReread = $state(false);
-  let rereadStarted = $state('');
-  let rereadFinished = $state('');
-  let rereadRating = $state('');
-  let rereadNotes = $state('');
-  function saveReread() {
+  function handleDnfUpdate(field: string, value: any) {
     if (!user || !book) return;
-    const history = [...(userData?.readHistory || [])];
-    history.push({
-      dateStarted: rereadStarted || undefined,
-      dateFinished: rereadFinished || undefined,
-      rating: rereadRating ? parseFloat(rereadRating) : undefined,
-      notes: rereadNotes.trim() || undefined
-    });
-    userData = setUserBookData(user.id, book.id, { readHistory: history });
-    rereadStarted = '';
-    rereadFinished = '';
-    rereadRating = '';
-    rereadNotes = '';
-    addingReread = false;
-  }
-  function removeReread(index: number) {
-    if (!user || !book) return;
-    const history = [...(userData?.readHistory || [])];
-    history.splice(index, 1);
-    userData = setUserBookData(user.id, book.id, { readHistory: history });
+    userData = setUserBookData(user.id, book.id, { [field]: value });
   }
 
   let statusConfig = $derived({
@@ -373,95 +277,7 @@
     </button>
 
     {#if editing}
-      <div class="flex gap-5 mb-6 items-start">
-        <div class="w-20 h-28 rounded-lg overflow-hidden book-shadow bg-warm-100 flex-shrink-0">
-          {#if coverSrc}
-            <img src={coverSrc} alt={book.title} class="w-full h-full object-cover" />
-          {:else}
-            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-warm-100 to-warm-200 text-ink-muted text-[10px] text-center px-2 font-display">{book.title}</div>
-          {/if}
-        </div>
-        <div>
-          <h2 class="font-display text-lg font-bold text-ink leading-snug">{t('book.edit')}</h2>
-          <p class="text-xs text-ink-muted mt-0.5">{t('book.edit_subtitle')}</p>
-        </div>
-      </div>
-
-      <form class="flex flex-col gap-4 animate-fade-up" onsubmit={(e) => { e.preventDefault(); saveEdit(); }}>
-        <div class="card p-5 flex flex-col gap-4">
-          <label class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.book_title')} *</span>
-            <input type="text" bind:value={editTitle} class="input-field" />
-          </label>
-
-          <label class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.authors')}</span>
-            <input type="text" bind:value={editAuthors} placeholder={t('add.authors_placeholder')} class="input-field" />
-          </label>
-
-          <label class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.isbn')}</span>
-            <input type="text" bind:value={editIsbn} class="input-field font-mono" />
-          </label>
-
-          <label class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.publisher')}</span>
-            <input type="text" bind:value={editPublisher} placeholder={t('add.publisher_placeholder')} class="input-field" />
-          </label>
-
-          <div class="grid grid-cols-2 gap-3">
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.publish_year')}</span>
-              <input type="number" bind:value={editPublishYear} placeholder="2024" class="input-field" />
-            </label>
-
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.edition')}</span>
-              <input type="text" bind:value={editEdition} placeholder={t('add.edition_placeholder')} class="input-field" />
-            </label>
-          </div>
-
-          <label class="flex flex-col gap-1.5">
-            <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.categories')}</span>
-            <input type="text" bind:value={editCategories} placeholder={t('add.categories_placeholder')} class="input-field" />
-          </label>
-        </div>
-
-        <div class="card p-5 flex flex-col gap-4">
-          <h3 class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.series')}</h3>
-          <select bind:value={editSeriesId} class="input-field">
-            <option value="">{t('add.series_none')}</option>
-            {#each seriesList as s}
-              <option value={s.id}>{s.name}</option>
-            {/each}
-          </select>
-
-          {#if editSeriesId}
-            <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-semibold text-ink-muted uppercase tracking-wider">{t('add.series_position')}</span>
-              <input type="number" bind:value={editSeriesOrder} min="1" placeholder="1" class="input-field" />
-            </label>
-          {/if}
-
-          <div class="flex gap-2">
-            <input type="text" bind:value={newSeriesName} placeholder={t('add.series_create')}
-              class="input-field flex-1" />
-            <button type="button" class="btn-secondary"
-              onclick={() => {
-                if (!newSeriesName.trim()) return;
-                const s = createSeries(newSeriesName.trim());
-                seriesList = getAllSeries();
-                editSeriesId = s.id;
-                newSeriesName = '';
-              }}>{t('add.series_add')}</button>
-          </div>
-        </div>
-
-        <div class="flex gap-3 pt-1">
-          <button type="submit" class="btn-primary flex-1">{t('book.save')}</button>
-          <button type="button" class="btn-secondary" onclick={() => editing = false}>{t('dialog.cancel')}</button>
-        </div>
-      </form>
+      <BookEditForm {book} {coverSrc} onSave={handleEditSave} onCancel={() => editing = false} />
     {:else}
       <div class="flex gap-6 mb-8">
         <div class="flex-shrink-0">
@@ -486,7 +302,7 @@
             <button onclick={toggleWishlist} class="mt-0.5 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all {userData?.isWishlist ? 'text-accent bg-accent/10' : 'text-warm-300 hover:text-accent hover:bg-accent/5'}" aria-label="{userData?.isWishlist ? t('book.wishlist_in') : t('book.wishlist_add')}">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="{userData?.isWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <button onclick={startEditing} class="mt-0.5 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-warm-300 hover:text-accent hover:bg-accent/5 transition-colors" aria-label={t('book.edit')}>
+            <button onclick={() => { if (!book) return; editing = true; }} class="mt-0.5 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-warm-300 hover:text-accent hover:bg-accent/5 transition-colors" aria-label={t('book.edit')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
           </div>
@@ -608,63 +424,7 @@
         </div>
 
         <!-- Re-read History -->
-        <div class="mb-6 animate-fade-up">
-          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.reread_history')}</h2>
-          {#if userData?.readHistory?.length}
-            <div class="flex flex-col gap-2 mb-3">
-              {#each userData.readHistory as entry, i}
-                <div class="card p-3 flex items-center gap-3">
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm text-ink">
-                      <span>{entry.dateStarted?.slice(0, 10) || t('book.reread_history.no_date')}</span>
-                      <span class="text-ink-muted mx-1">&rarr;</span>
-                      <span>{entry.dateFinished?.slice(0, 10) || t('book.reread_history.no_date')}</span>
-                    </div>
-                    <div class="flex gap-2 mt-0.5">
-                      {#if entry.rating}
-                        <span class="text-xs text-accent">{'&#9733;'.repeat(Math.floor(entry.rating))}{entry.rating % 1 ? '&#189;' : ''}</span>
-                      {/if}
-                      {#if entry.notes}
-                        <span class="text-xs text-ink-muted truncate">{entry.notes}</span>
-                      {/if}
-                    </div>
-                  </div>
-                  <button class="w-7 h-7 flex items-center justify-center rounded-lg text-warm-400 hover:text-berry hover:bg-berry/10 transition-colors flex-shrink-0 text-sm" onclick={() => removeReread(i)}>&times;</button>
-                </div>
-              {/each}
-            </div>
-          {/if}
-          {#if addingReread}
-            <div class="card p-4 flex flex-col gap-3 animate-fade-up">
-              <div class="flex gap-3">
-                <label class="flex flex-col gap-1 flex-1">
-                  <span class="text-xs text-ink-muted">{t('book.reread_history.started')}</span>
-                  <input type="date" bind:value={rereadStarted} class="input-field !py-1.5 text-sm" />
-                </label>
-                <label class="flex flex-col gap-1 flex-1">
-                  <span class="text-xs text-ink-muted">{t('book.reread_history.finished')}</span>
-                  <input type="date" bind:value={rereadFinished} class="input-field !py-1.5 text-sm" />
-                </label>
-              </div>
-              <div class="flex gap-3">
-                <label class="flex flex-col gap-1 w-20">
-                  <span class="text-xs text-ink-muted">{t('library.sort.rating')}</span>
-                  <input type="number" bind:value={rereadRating} min="0.5" max="5" step="0.5" class="input-field !py-1.5 text-sm" />
-                </label>
-                <label class="flex flex-col gap-1 flex-1">
-                  <span class="text-xs text-ink-muted">{t('book.notes')}</span>
-                  <input type="text" bind:value={rereadNotes} class="input-field !py-1.5 text-sm" />
-                </label>
-              </div>
-              <div class="flex gap-2">
-                <button class="btn-primary-sm" onclick={saveReread}>{t('book.quotes.save')}</button>
-                <button class="btn-secondary text-sm" onclick={() => { addingReread = false; rereadStarted = ''; rereadFinished = ''; rereadRating = ''; rereadNotes = ''; }}>{t('book.quotes.cancel')}</button>
-              </div>
-            </div>
-          {:else}
-            <button class="btn-secondary text-sm" onclick={() => addingReread = true}>+ {t('book.reread_history.add')}</button>
-          {/if}
-        </div>
+        <BookRereadHistory readHistory={userData?.readHistory || []} onUpdate={handleRereadUpdate} />
       {/if}
 
       {#if userData?.status === 'reading'}
@@ -751,31 +511,7 @@
       {/if}
 
       {#if userData?.status === 'dnf'}
-        <div class="mb-6 animate-fade-up">
-          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.dnf')}</h2>
-          <div class="card p-4 flex flex-col gap-3">
-            <label class="flex flex-col gap-1">
-              <span class="text-xs text-ink-muted">{t('book.dnf.reason')}</span>
-              <textarea
-                class="input-field resize-none h-16 text-sm"
-                placeholder={t('book.dnf.reason_placeholder')}
-                value={userData?.dnfReason || ''}
-                onblur={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dnfReason: (e.target as HTMLTextAreaElement).value || undefined }); }}
-              ></textarea>
-            </label>
-            <label class="flex flex-col gap-1 w-40">
-              <span class="text-xs text-ink-muted">{t('book.dnf.stopped_at')}</span>
-              <input
-                type="number"
-                min="1"
-                value={userData?.dnfPage || ''}
-                onblur={(e) => { if (user && book) userData = setUserBookData(user.id, book.id, { dnfPage: parseInt((e.target as HTMLInputElement).value) || undefined }); }}
-                class="input-field !py-1.5 text-sm"
-                placeholder={t('book.dnf.page_placeholder')}
-              />
-            </label>
-          </div>
-        </div>
+        <BookDnfDetails dnfReason={userData?.dnfReason} dnfPage={userData?.dnfPage} onUpdate={handleDnfUpdate} />
       {/if}
 
       <div class="mb-6">
@@ -789,118 +525,18 @@
       </div>
 
       <!-- Quotes -->
-      <div class="mb-6">
-        <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.quotes')}</h2>
-        {#if userData?.quotes?.length}
-          <div class="flex flex-col gap-2 mb-3">
-            {#each userData.quotes as quote, i}
-              <div class="card p-3">
-                <div class="flex justify-between items-start gap-2">
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm text-ink italic">"{quote.text}"</p>
-                    <div class="flex gap-3 mt-1">
-                      {#if quote.page}<span class="text-xs text-ink-muted">{t('book.quotes.page')} {quote.page}</span>{/if}
-                      {#if quote.note}<span class="text-xs text-ink-muted">{quote.note}</span>{/if}
-                    </div>
-                  </div>
-                  <button class="w-7 h-7 flex items-center justify-center rounded-lg text-warm-400 hover:text-berry hover:bg-berry/10 transition-colors flex-shrink-0 text-sm" onclick={() => removeQuote(i)}>&times;</button>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-        {#if addingQuote}
-          <div class="card p-4 flex flex-col gap-3 animate-fade-up">
-            <textarea
-              bind:value={newQuoteText}
-              placeholder={t('book.quotes.text_placeholder')}
-              class="input-field resize-none h-20 text-sm"
-            ></textarea>
-            <div class="flex gap-3">
-              <label class="flex flex-col gap-1 w-24">
-                <span class="text-xs text-ink-muted">{t('book.quotes.page')}</span>
-                <input type="number" bind:value={newQuotePage} min="1" class="input-field !py-1.5 text-sm" />
-              </label>
-              <label class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-ink-muted">{t('book.quotes.note')}</span>
-                <input type="text" bind:value={newQuoteNote} placeholder={t('book.quotes.note_placeholder')} class="input-field !py-1.5 text-sm" />
-              </label>
-            </div>
-            <div class="flex gap-2">
-              <button class="btn-primary-sm" onclick={saveQuote}>{t('book.quotes.save')}</button>
-              <button class="btn-secondary text-sm" onclick={() => { addingQuote = false; newQuoteText = ''; newQuotePage = ''; newQuoteNote = ''; }}>{t('book.quotes.cancel')}</button>
-            </div>
-          </div>
-        {:else}
-          <button class="btn-secondary text-sm" onclick={() => addingQuote = true}>+ {t('book.quotes.add')}</button>
-        {/if}
-      </div>
+      <BookQuotes quotes={userData?.quotes || []} onUpdate={handleQuotesUpdate} />
 
       <!-- Tags -->
-      <div class="mb-6">
-        <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.tags')}</h2>
-        {#if userData?.tags?.length}
-          <div class="flex gap-1.5 flex-wrap mb-2">
-            {#each userData.tags as tag}
-              <span class="text-xs px-2.5 py-0.5 bg-accent/10 text-accent rounded-full font-medium flex items-center gap-1">
-                {tag}
-                <button class="hover:text-berry transition-colors" onclick={() => removeTag(tag)}>&times;</button>
-              </span>
-            {/each}
-          </div>
-        {/if}
-        <input
-          type="text"
-          bind:value={newTag}
-          placeholder={t('book.tags_placeholder')}
-          class="input-field !py-1.5 text-sm"
-          onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-        />
-      </div>
+      <BookTags tags={userData?.tags || []} onUpdate={handleTagsUpdate} />
 
       <!-- Acquisition -->
-      <div class="mb-6">
-        <button
-          class="text-xs font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-1 hover:text-ink transition-colors"
-          onclick={() => acquisitionOpen = !acquisitionOpen}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform {acquisitionOpen ? 'rotate-90' : ''}"><path d="m9 18 6-6-6-6"/></svg>
-          {t('book.acquisition')}
-        </button>
-        {#if acquisitionOpen}
-          <div class="card p-4 mt-2.5 flex flex-col gap-3 animate-fade-up">
-            <label class="flex flex-col gap-1">
-              <span class="text-xs text-ink-muted">{t('book.acquisition.where')}</span>
-              <input
-                type="text"
-                value={userData?.acquiredFrom || ''}
-                onblur={(e) => updateAcquisition('acquiredFrom', (e.target as HTMLInputElement).value)}
-                class="input-field !py-1.5 text-sm"
-              />
-            </label>
-            <div class="flex gap-3">
-              <label class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-ink-muted">{t('book.acquisition.price')}</span>
-                <input
-                  type="text"
-                  value={userData?.acquiredPrice || ''}
-                  onblur={(e) => updateAcquisition('acquiredPrice', (e.target as HTMLInputElement).value)}
-                  class="input-field !py-1.5 text-sm"
-                />
-              </label>
-              <label class="flex flex-col gap-1 flex-1">
-                <span class="text-xs text-ink-muted">{t('book.acquisition.date')}</span>
-                <input
-                  type="date"
-                  value={userData?.acquiredDate?.slice(0, 10) || ''}
-                  onchange={(e) => updateAcquisition('acquiredDate', (e.target as HTMLInputElement).value)}
-                  class="input-field !py-1.5 text-sm"
-                />
-              </label>
-            </div>
-          </div>
-        {/if}
-      </div>
+      <BookAcquisition
+        acquiredFrom={userData?.acquiredFrom}
+        acquiredPrice={userData?.acquiredPrice}
+        acquiredDate={userData?.acquiredDate}
+        onUpdate={handleAcquisitionUpdate}
+      />
 
       <div class="mb-6">
         <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.lending')}</h2>
@@ -936,18 +572,7 @@
         {/if}
       </div>
 
-      {#if relatedBooks.length > 0}
-        <div class="mb-6">
-          <h2 class="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2.5">{t('book.related')}</h2>
-          <div class="flex gap-4 overflow-x-auto pb-2">
-            {#each relatedBooks as related}
-              <div class="flex-shrink-0">
-                <BookCard book={related} onclick={() => goto(`${base}/book/${related.id}`)} />
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/if}
+      <BookRelated books={relatedBooks} />
 
       <div class="mt-8 pt-6 border-t border-warm-100">
         <button
