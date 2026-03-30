@@ -19,11 +19,13 @@ vi.mock('$lib/db', () => {
 	};
 });
 
-import { addBook, updateBook, deleteBook, getBooks, getBookById, searchBooks } from './books';
+import { addBook, updateBook, deleteBook, getBooks, getBookById, searchBooks, findSimilarBooks, resetSearchIndex } from './books';
+import { setUserBookData } from './userbooks';
 
 beforeEach(() => {
 	doc = new Y.Doc();
 	q = createQueryHelpers(doc);
+	resetSearchIndex();
 });
 
 describe('Book service', () => {
@@ -87,5 +89,27 @@ describe('Book service', () => {
 		const books = getBooks();
 		expect(books[0].title).toBe('B');
 		expect(books[1].title).toBe('A');
+	});
+
+	it('should find similar books by fuzzy title matching', () => {
+		addBook({ title: 'The Lord of the Rings', authors: ['Tolkien'], categories: [] }, true);
+		expect(findSimilarBooks('the lord of the rings')).toHaveLength(1);
+		expect(findSimilarBooks('LORD OF THE RINGS')).toHaveLength(0); // missing "The"
+		expect(findSimilarBooks('The Lord of the Rings')).toHaveLength(1);
+		expect(findSimilarBooks('Something Else')).toHaveLength(0);
+	});
+
+	it('should search with prefix index', () => {
+		addBook({ title: 'Harry Potter', authors: ['J.K. Rowling'], categories: ['fantasy'] }, true);
+		addBook({ title: 'Hamlet', authors: ['Shakespeare'], categories: ['drama'] }, true);
+		const results = searchBooks('har');
+		expect(results.length).toBeGreaterThanOrEqual(1);
+		expect(results.some(b => b.title === 'Harry Potter')).toBe(true);
+	});
+
+	it('should support half-star ratings via setUserBookData', () => {
+		const book = addBook({ title: 'Test Rating', authors: [], categories: [] }, true);
+		const ubd = setUserBookData('user1', book!.id, { rating: 3.5 });
+		expect(ubd.rating).toBe(3.5);
 	});
 });

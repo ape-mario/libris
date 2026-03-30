@@ -3,7 +3,9 @@ import {
 	generateRoomCode,
 	isValidRoomCode,
 	formatRoomCode,
-	parseRoomCodeFromUrl
+	parseRoomCodeFromUrl,
+	getRoomLink,
+	parsePasswordFromUrl
 } from './room';
 
 describe('Room codes', () => {
@@ -48,5 +50,44 @@ describe('Room codes', () => {
 	it('parseRoomCodeFromUrl returns null for invalid URL', () => {
 		expect(parseRoomCodeFromUrl('https://libris.app/settings')).toBeNull();
 		expect(parseRoomCodeFromUrl('not-a-url')).toBeNull();
+	});
+});
+
+describe('Room links and passwords', () => {
+	it('getRoomLink includes password as hash fragment', () => {
+		// Mock window.location.origin
+		const origLocation = globalThis.window?.location;
+		Object.defineProperty(globalThis, 'window', {
+			value: { location: { origin: 'https://example.com' } },
+			writable: true,
+			configurable: true
+		});
+		const link = getRoomLink('ABCD-EF23', '/libris', 'secret123');
+		expect(link).toContain('#pw=secret123');
+		expect(link).toContain('/join/ABCD-EF23');
+		// Restore
+		if (origLocation) {
+			Object.defineProperty(globalThis, 'window', { value: { location: origLocation }, writable: true, configurable: true });
+		}
+	});
+
+	it('getRoomLink without password has no hash', () => {
+		Object.defineProperty(globalThis, 'window', {
+			value: { location: { origin: 'https://example.com' } },
+			writable: true,
+			configurable: true
+		});
+		const link = getRoomLink('ABCD-EF23', '/libris');
+		expect(link).not.toContain('#');
+	});
+
+	it('parsePasswordFromUrl extracts password from hash', () => {
+		const pw = parsePasswordFromUrl('https://example.com/join/ABCD-EF23#pw=secret123');
+		expect(pw).toBe('secret123');
+	});
+
+	it('parsePasswordFromUrl returns null without password', () => {
+		const pw = parsePasswordFromUrl('https://example.com/join/ABCD-EF23');
+		expect(pw).toBeNull();
 	});
 });

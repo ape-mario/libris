@@ -113,6 +113,12 @@ function ensureSearchObserver() {
 	try { q.observe('books', () => { searchCache = null; }); } catch {}
 }
 
+/** Reset search index state. Exposed for testing only. */
+export function resetSearchIndex(): void {
+	searchCache = null;
+	searchObserverSet = false;
+}
+
 // Also invalidate on count mismatch — the cache checks length, but we set
 // searchCache to null eagerly here as a belt-and-suspenders approach
 

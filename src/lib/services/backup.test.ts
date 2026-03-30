@@ -46,7 +46,7 @@ describe('Backup service', () => {
 		const parsed = JSON.parse(json);
 		expect(parsed.books).toHaveLength(1);
 		expect(parsed.users).toHaveLength(1);
-		expect(parsed.version).toBe(4);
+		expect(parsed.version).toBe(5);
 
 		// Clear and reimport
 		doc = new Y.Doc();

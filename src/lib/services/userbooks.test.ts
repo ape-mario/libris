@@ -43,4 +43,28 @@ describe('UserBookData service', () => {
 		const data = getUserBookData('u1', 'b1');
 		expect(data).toBeNull();
 	});
+
+	it('should auto-set dateStarted when status changes to reading', () => {
+		q.setItem('userBookData', 'u1:b1', { userId: 'u1', bookId: 'b1', status: 'unread', isWishlist: false });
+		const result = setUserBookData('u1', 'b1', { status: 'reading' });
+		expect(result.dateStarted).toBeDefined();
+	});
+
+	it('should auto-set dateRead when status changes to read', () => {
+		q.setItem('userBookData', 'u1:b2', { userId: 'u1', bookId: 'b2', status: 'reading', isWishlist: false });
+		const result = setUserBookData('u1', 'b2', { status: 'read' });
+		expect(result.dateRead).toBeDefined();
+	});
+
+	it('should not override explicit dateRead', () => {
+		q.setItem('userBookData', 'u1:b3', { userId: 'u1', bookId: 'b3', status: 'reading', isWishlist: false });
+		const result = setUserBookData('u1', 'b3', { status: 'read', dateRead: '2024' });
+		expect(result.dateRead).toBe('2024');
+	});
+
+	it('should store tags as array', () => {
+		q.setItem('userBookData', 'u1:b4', { userId: 'u1', bookId: 'b4', status: 'unread', isWishlist: false });
+		const result = setUserBookData('u1', 'b4', { tags: ['fiction', 'mystery'] });
+		expect(result.tags).toEqual(['fiction', 'mystery']);
+	});
 });
