@@ -29,7 +29,7 @@
     searchDone = false;
     searchResults = [];
     try {
-      const { searchOpenLibrary } = await import('$lib/services/openlibrary');
+      const { searchOpenLibrary } = await import('$lib/services/bookLookup');
       searchResults = await searchOpenLibrary(searchQuery);
     } catch {
       showToast(t('add.error_save_failed'), 'error');
@@ -80,7 +80,7 @@
     barcodeResult = null;
     barcodeISBN = code;
 
-    const { lookupByISBN } = await import('$lib/services/openlibrary');
+    const { lookupByISBN } = await import('$lib/services/bookLookup');
     const { addBook } = await import('$lib/services/books');
     const result = await lookupByISBN(code);
     barcodeProcessing = false;

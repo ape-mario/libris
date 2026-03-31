@@ -5,7 +5,7 @@
   import { addBook, hasBookWithISBN } from '$lib/services/books';
   import { showConfirm } from '$lib/stores/dialog.svelte';
   import { resizeImage } from '$lib/services/covers';
-  import { searchOpenLibrary, lookupByISBN, type OpenLibraryResult } from '$lib/services/openlibrary';
+  import { searchOpenLibrary, lookupByISBN, type OpenLibraryResult } from '$lib/services/bookLookup';
   import { getAllSeries, createSeries } from '$lib/services/series';
   import { q } from '$lib/db';
   import { setCoverBase64 } from '$lib/services/coverCache';

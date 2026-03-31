@@ -79,7 +79,7 @@
 
     isbnLooking = true;
     let count = 0;
-    const { lookupByISBN } = await import('$lib/services/openlibrary');
+    const { lookupByISBN } = await import('$lib/services/bookLookup');
     const { addBook } = await import('$lib/services/books');
 
     // Process with concurrency limit of 3
